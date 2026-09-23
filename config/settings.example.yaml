@@ -1,0 +1,52 @@
+# 台股K線技術指標監測系統 - 設定檔
+
+finmind:
+  # 到 https://finmindtrade.com 免費註冊可取得 token,600次/小時(不填則用匿名 300次/小時)
+  token: ""
+  requests_per_hour: 280   # 保守值,低於匿名上限300;若有填token可調高到550
+  lookback_days: 150       # 每次抓取的日曆天數(約100個交易日,供MA60/布林/MACD計算)
+
+universe_file: "config/universe.json"
+db_path: "data/stock.db"
+report_dir: "reports"
+
+indicators:
+  ma_periods: [5, 20, 60]
+  ma_cross_fast: 5
+  ma_cross_slow: 20
+
+  rsi_period: 14
+  rsi_overbought: 70
+  rsi_oversold: 30
+
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+
+  bollinger_period: 20
+  bollinger_std: 2
+
+  volume_avg_period: 5
+  volume_spike_multiplier: 2.0
+
+  new_high_low_period: 60
+
+# 任一指標觸發即列入清單(all = 任一觸發, all_required 目前不啟用)
+trigger_mode: "any"
+
+notify:
+  telegram:
+    enabled: false
+    bot_token: ""     # 到 Telegram @BotFather 申請
+    chat_id: ""        # 你的 Telegram chat id
+  email:
+    enabled: false
+    to: ""   # 收件信箱,寄件用已連接的 Gmail 帳號
+
+artifact:
+  # 用 Artifact 工具發布一次後把網址填在這裡,之後排程會固定 republish 同一個網址
+  url: ""
+
+news:
+  enabled: true
+  max_per_stock: 3   # 每檔股票最多列幾則新聞(去重後)

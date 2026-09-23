@@ -1,0 +1,50 @@
+# CI(GitHub Actions)專用設定範本。工作流程會在執行前把這份檔案複製成 config/settings.yaml。
+# 所有機密值(token、密碼、收件信箱)一律留空,執行時由 src/main.py 從環境變數(GitHub Secrets)覆寫,
+# 不會有任何機密內容進版控。本機開發請用 config/settings.example.yaml 複製出 settings.yaml 自行填值。
+
+finmind:
+  token: ""              # 由環境變數 FINMIND_TOKEN 覆寫(選填)
+  requests_per_hour: 280  # 保守值,對應匿名/免token額度;有設定 FINMIND_TOKEN 這個Secret的話可以調高到550
+  lookback_days: 150
+
+universe_file: "config/universe.json"
+db_path: "data/stock.db"
+report_dir: "reports"
+
+indicators:
+  ma_periods: [5, 20, 60]
+  ma_cross_fast: 5
+  ma_cross_slow: 20
+
+  rsi_period: 14
+  rsi_overbought: 70
+  rsi_oversold: 30
+
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+
+  bollinger_period: 20
+  bollinger_std: 2
+
+  volume_avg_period: 5
+  volume_spike_multiplier: 2.0
+
+  new_high_low_period: 60
+
+trigger_mode: "any"
+
+notify:
+  telegram:
+    enabled: true
+    bot_token: ""   # 由環境變數 TELEGRAM_BOT_TOKEN 覆寫
+    chat_id: ""     # 由環境變數 TELEGRAM_CHAT_ID 覆寫
+  email:
+    enabled: true
+    to: ""          # 由環境變數 EMAIL_TO 覆寫
+
+news:
+  enabled: true
+  max_per_stock: 3
+
+pages_url: "https://aaronhuang1006-debug.github.io/tw-stock-monitor/"

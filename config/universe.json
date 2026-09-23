@@ -1,0 +1,1028 @@
+{
+  "_comment": "台灣50(0050)+中型100(0051)成分股(來源:元大投信官網持股比重頁,擷取日期2026-09-16)+台股規模前20大股票型ETF(不含債券型與國際市場ETF,擷取日期2026-09-19)。ETF成分股每季(3/6/9/12月)調整,建議每季手動更新前150檔部分;後20檔ETF清單建議每年檢視一次規模排名。",
+  "source": "https://www.yuantaetfs.com/product/detail/0050/ratio , https://www.yuantaetfs.com/product/detail/0051/ratio , https://tw.stock.yahoo.com/tw-etf/total-assets",
+  "as_of": "2026-09-16",
+  "stocks": [
+    {
+      "stock_id": "2330",
+      "name": "台積電",
+      "index": "0050",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2454",
+      "name": "聯發科",
+      "index": "0050",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2308",
+      "name": "台達電",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2317",
+      "name": "鴻海",
+      "index": "0050",
+      "industry": "其他電子業"
+    },
+    {
+      "stock_id": "3711",
+      "name": "日月光投控",
+      "index": "0050",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2303",
+      "name": "聯電",
+      "index": "0050",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2383",
+      "name": "台光電",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2881",
+      "name": "富邦金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "3037",
+      "name": "欣興",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2891",
+      "name": "中信金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "1303",
+      "name": "南亞",
+      "index": "0050",
+      "industry": "塑膠工業"
+    },
+    {
+      "stock_id": "2882",
+      "name": "國泰金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "2887",
+      "name": "台新金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "3017",
+      "name": "奇鋐",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2345",
+      "name": "智邦",
+      "index": "0050",
+      "industry": "通信網路業"
+    },
+    {
+      "stock_id": "2382",
+      "name": "廣達",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2327",
+      "name": "國巨",
+      "index": "0050",
+      "industry": "電子零組件業"
+    },
+    {
+      "stock_id": "2885",
+      "name": "元大金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "2360",
+      "name": "致茂",
+      "index": "0050",
+      "industry": "其他電子業"
+    },
+    {
+      "stock_id": "2884",
+      "name": "玉山金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "2059",
+      "name": "川湖",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "6669",
+      "name": "緯穎",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2357",
+      "name": "華碩",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2883",
+      "name": "開發金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "2886",
+      "name": "兆豐金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "2890",
+      "name": "永豐金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "3008",
+      "name": "大立光",
+      "index": "0050",
+      "industry": "光電業"
+    },
+    {
+      "stock_id": "2408",
+      "name": "南亞科",
+      "index": "0050",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "3231",
+      "name": "緯創",
+      "index": "0050",
+      "industry": "電腦及週邊設備業"
+    },
+    {
+      "stock_id": "2301",
+      "name": "光寶科",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2412",
+      "name": "中華電",
+      "index": "0050",
+      "industry": "通信網路業"
+    },
+    {
+      "stock_id": "2344",
+      "name": "華邦電",
+      "index": "0050",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "3443",
+      "name": "創意",
+      "index": "0050",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2892",
+      "name": "第一金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "3653",
+      "name": "健策",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2880",
+      "name": "華南金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "4958",
+      "name": "臻鼎-KY",
+      "index": "0050",
+      "industry": "電子零組件業"
+    },
+    {
+      "stock_id": "1216",
+      "name": "統一",
+      "index": "0050",
+      "industry": "食品工業"
+    },
+    {
+      "stock_id": "3665",
+      "name": "貿聯-KY",
+      "index": "0050",
+      "industry": "其他電子業"
+    },
+    {
+      "stock_id": "7769",
+      "name": "鴻準",
+      "index": "0050",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2368",
+      "name": "金像電",
+      "index": "0050",
+      "industry": "電子零組件業"
+    },
+    {
+      "stock_id": "2395",
+      "name": "研華",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2449",
+      "name": "京元電子",
+      "index": "0050",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "5880",
+      "name": "合庫金",
+      "index": "0050",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "2603",
+      "name": "長榮",
+      "index": "0050",
+      "industry": "航運業"
+    },
+    {
+      "stock_id": "3661",
+      "name": "世芯-KY",
+      "index": "0050",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "8046",
+      "name": "南電",
+      "index": "0050",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "4904",
+      "name": "遠傳",
+      "index": "0050",
+      "industry": "通信網路業"
+    },
+    {
+      "stock_id": "3045",
+      "name": "台灣大",
+      "index": "0050",
+      "industry": "通信網路業"
+    },
+    {
+      "stock_id": "6505",
+      "name": "台塑化",
+      "index": "0050",
+      "industry": "油電燃氣業"
+    },
+    {
+      "stock_id": "6446",
+      "name": "藥華藥",
+      "index": "0051",
+      "industry": "化學生技醫療"
+    },
+    {
+      "stock_id": "3481",
+      "name": "群創",
+      "index": "0051",
+      "industry": "光電業"
+    },
+    {
+      "stock_id": "2379",
+      "name": "瑞昱",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "3034",
+      "name": "聯詠",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "3189",
+      "name": "景碩",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "1301",
+      "name": "台塑",
+      "index": "0051",
+      "industry": "塑膠工業"
+    },
+    {
+      "stock_id": "2313",
+      "name": "華通",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "6770",
+      "name": "力積電",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2801",
+      "name": "彰銀",
+      "index": "0051",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "3044",
+      "name": "健鼎",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "1326",
+      "name": "台化",
+      "index": "0051",
+      "industry": "塑膠工業"
+    },
+    {
+      "stock_id": "2337",
+      "name": "旺宏",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2002",
+      "name": "中鋼",
+      "index": "0051",
+      "industry": "鋼鐵工業"
+    },
+    {
+      "stock_id": "5876",
+      "name": "上海商銀",
+      "index": "0051",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "2376",
+      "name": "技嘉",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "6239",
+      "name": "力成",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2404",
+      "name": "漢唐",
+      "index": "0051",
+      "industry": "其他電子業"
+    },
+    {
+      "stock_id": "2409",
+      "name": "友達",
+      "index": "0051",
+      "industry": "光電業"
+    },
+    {
+      "stock_id": "4938",
+      "name": "和碩",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "1590",
+      "name": "亞德客-KY",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "2615",
+      "name": "萬海",
+      "index": "0051",
+      "industry": "航運業"
+    },
+    {
+      "stock_id": "1101",
+      "name": "台泥",
+      "index": "0051",
+      "industry": "水泥工業"
+    },
+    {
+      "stock_id": "2356",
+      "name": "英業達",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "3702",
+      "name": "大聯大",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "6515",
+      "name": "穎崴",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2324",
+      "name": "仁寶",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2207",
+      "name": "和泰車",
+      "index": "0051",
+      "industry": "汽車工業"
+    },
+    {
+      "stock_id": "3036",
+      "name": "文曄",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "5871",
+      "name": "中租-KY",
+      "index": "0051",
+      "industry": "其他"
+    },
+    {
+      "stock_id": "6415",
+      "name": "矽力-KY",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2834",
+      "name": "臺企銀",
+      "index": "0051",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "3533",
+      "name": "嘉澤",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "6213",
+      "name": "聯茂",
+      "index": "0051",
+      "industry": "電子零組件業"
+    },
+    {
+      "stock_id": "1605",
+      "name": "華新",
+      "index": "0051",
+      "industry": "電器電纜"
+    },
+    {
+      "stock_id": "2912",
+      "name": "統一超",
+      "index": "0051",
+      "industry": "貿易百貨"
+    },
+    {
+      "stock_id": "6139",
+      "name": "亞翔",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2618",
+      "name": "長榮航",
+      "index": "0051",
+      "industry": "航運業"
+    },
+    {
+      "stock_id": "2347",
+      "name": "聯強",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "6805",
+      "name": "富世達",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "1519",
+      "name": "華城",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "2609",
+      "name": "陽明",
+      "index": "0051",
+      "industry": "航運業"
+    },
+    {
+      "stock_id": "2377",
+      "name": "微星",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "8996",
+      "name": "高力",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "3026",
+      "name": "禾伸堂",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "6531",
+      "name": "愛普*",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2049",
+      "name": "上銀",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "2455",
+      "name": "全新",
+      "index": "0051",
+      "industry": "通信網路業"
+    },
+    {
+      "stock_id": "2474",
+      "name": "可成",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "6257",
+      "name": "矽格",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2027",
+      "name": "大成鋼",
+      "index": "0051",
+      "industry": "鋼鐵工業"
+    },
+    {
+      "stock_id": "2353",
+      "name": "宏碁",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "5434",
+      "name": "崇越",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2492",
+      "name": "華新科",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "1402",
+      "name": "遠東新",
+      "index": "0051",
+      "industry": "紡織纖維"
+    },
+    {
+      "stock_id": "1504",
+      "name": "東元",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "6442",
+      "name": "光聖",
+      "index": "0051",
+      "industry": "通信網路業"
+    },
+    {
+      "stock_id": "1102",
+      "name": "亞泥",
+      "index": "0051",
+      "industry": "水泥工業"
+    },
+    {
+      "stock_id": "6919",
+      "name": "康霖生技",
+      "index": "0051",
+      "industry": "化學生技醫療"
+    },
+    {
+      "stock_id": "1560",
+      "name": "中砂",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "2812",
+      "name": "台中銀",
+      "index": "0051",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "6285",
+      "name": "啟碁",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "3706",
+      "name": "神達",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "7750",
+      "name": "上緯投控",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "3023",
+      "name": "信邦",
+      "index": "0051",
+      "industry": "電子零組件業"
+    },
+    {
+      "stock_id": "2354",
+      "name": "鴻準",
+      "index": "0051",
+      "industry": "其他電子業"
+    },
+    {
+      "stock_id": "8464",
+      "name": "億豐",
+      "index": "0051",
+      "industry": "居家生活"
+    },
+    {
+      "stock_id": "1513",
+      "name": "中興電",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "2542",
+      "name": "興富發",
+      "index": "0051",
+      "industry": "建材營造"
+    },
+    {
+      "stock_id": "2610",
+      "name": "華航",
+      "index": "0051",
+      "industry": "航運業"
+    },
+    {
+      "stock_id": "6409",
+      "name": "旭隼",
+      "index": "0051",
+      "industry": "其他電子業"
+    },
+    {
+      "stock_id": "2385",
+      "name": "群光",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "1717",
+      "name": "長興",
+      "index": "0051",
+      "industry": "化學工業"
+    },
+    {
+      "stock_id": "1802",
+      "name": "台玻",
+      "index": "0051",
+      "industry": "玻璃陶瓷"
+    },
+    {
+      "stock_id": "8210",
+      "name": "勤誠",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "9904",
+      "name": "寶成",
+      "index": "0051",
+      "industry": "運動休閒"
+    },
+    {
+      "stock_id": "1476",
+      "name": "儒鴻",
+      "index": "0051",
+      "industry": "紡織纖維"
+    },
+    {
+      "stock_id": "5269",
+      "name": "祥碩",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2451",
+      "name": "創見",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "6196",
+      "name": "帆宣",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "1503",
+      "name": "士電",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "2105",
+      "name": "正新",
+      "index": "0051",
+      "industry": "橡膠工業"
+    },
+    {
+      "stock_id": "3167",
+      "name": "大量",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "2633",
+      "name": "台灣高鐵",
+      "index": "0051",
+      "industry": "航運業"
+    },
+    {
+      "stock_id": "2467",
+      "name": "志聖",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "3005",
+      "name": "神基",
+      "index": "0051",
+      "industry": "電腦及週邊設備業"
+    },
+    {
+      "stock_id": "6691",
+      "name": "洋基工程",
+      "index": "0051",
+      "industry": "其他電子業"
+    },
+    {
+      "stock_id": "6789",
+      "name": "采鈺",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "9945",
+      "name": "潤泰新",
+      "index": "0051",
+      "industry": "其他"
+    },
+    {
+      "stock_id": "1229",
+      "name": "聯華",
+      "index": "0051",
+      "industry": "食品工業"
+    },
+    {
+      "stock_id": "3030",
+      "name": "德律",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2371",
+      "name": "大同",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "6781",
+      "name": "AES-KY",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "3532",
+      "name": "台勝科",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "9910",
+      "name": "豐泰",
+      "index": "0051",
+      "industry": "運動休閒"
+    },
+    {
+      "stock_id": "6526",
+      "name": "力旺",
+      "index": "0051",
+      "industry": "半導體業"
+    },
+    {
+      "stock_id": "2646",
+      "name": "星宇航空",
+      "index": "0051",
+      "industry": "航運業"
+    },
+    {
+      "stock_id": "2838",
+      "name": "聯邦銀",
+      "index": "0051",
+      "industry": "金融保險"
+    },
+    {
+      "stock_id": "4919",
+      "name": "新唐",
+      "index": "0051",
+      "industry": "電子工業"
+    },
+    {
+      "stock_id": "2645",
+      "name": "長榮航太",
+      "index": "0051",
+      "industry": "航運業"
+    },
+    {
+      "stock_id": "4583",
+      "name": "台灣精銳",
+      "index": "0051",
+      "industry": "電機機械"
+    },
+    {
+      "stock_id": "0050",
+      "name": "元大台灣50",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "0056",
+      "name": "元大高股息",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00878",
+      "name": "國泰永續高股息",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00919",
+      "name": "群益台灣精選高息",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "006208",
+      "name": "富邦台50",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00981A",
+      "name": "主動統一台股增長",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00631L",
+      "name": "元大台灣50正2",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "009816",
+      "name": "凱基台灣TOP50",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "0052",
+      "name": "富邦科技",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00403A",
+      "name": "主動統一升級50",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00929",
+      "name": "復華台灣科技優息",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00881",
+      "name": "國泰台灣科技龍頭",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00918",
+      "name": "大華優利高填息30",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00713",
+      "name": "元大台灣高息低波",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00922",
+      "name": "國泰台灣領袖50",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00940",
+      "name": "元大台灣價值高息",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00891",
+      "name": "中信關鍵半導體",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00935",
+      "name": "野村臺灣新科技50",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00927",
+      "name": "群益半導體收益",
+      "index": "ETF",
+      "industry": "ETF"
+    },
+    {
+      "stock_id": "00830",
+      "name": "國泰費城半導體",
+      "index": "ETF",
+      "industry": "ETF"
+    }
+  ],
+  "as_of_etf": "2026-09-19"
+}

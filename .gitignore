@@ -1,0 +1,10 @@
+config/settings.yaml
+data/*.db
+data/*.db-wal
+data/*.db-shm
+reports/*.csv
+reports/*.html
+__pycache__/
+*.pyc
+.venv/
+.tools/
