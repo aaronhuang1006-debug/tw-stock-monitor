@@ -35,6 +35,7 @@ jobs:
 
       - name: Run daily scan
         env:
+          TZ: Asia/Taipei
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
