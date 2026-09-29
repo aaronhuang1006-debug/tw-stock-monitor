@@ -2,7 +2,10 @@ name: Daily TW stock scan
 
 on:
   schedule:
-    - cron: "0 10 * * 1-5"  # 10:00 UTC = 18:00 Asia/Taipei, Mon-Fri
+    - cron: "0 10 * * 1-5"   # 10:00 UTC = 18:00 Asia/Taipei, Mon-Fri
+    - cron: "30 12 * * 1-5"  # 12:30 UTC = 20:30 Asia/Taipei — safety-net retry in case the
+                             # first trigger was skipped/delayed by GitHub's own scheduler
+                             # (a documented, occasional platform behavior, not under our control)
   workflow_dispatch: {}
 
 permissions:
@@ -25,7 +28,21 @@ jobs:
       - name: Use CI settings template
         run: cp config/settings.ci.yaml config/settings.yaml
 
+      - name: Check whether today's report is already published
+        id: check
+        run: |
+          TODAY=$(TZ=Asia/Taipei date +%Y-%m-%d)
+          echo "today=$TODAY" >> "$GITHUB_OUTPUT"
+          if grep -q "\"date\": \"$TODAY\"" docs/index.html 2>/dev/null; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "Already published for $TODAY — this is the safety-net trigger catching a normal day, skipping."
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+            echo "Not yet published for $TODAY — running (either the normal trigger, or a catch-up)."
+          fi
+
       - name: Restore stock database cache
+        if: steps.check.outputs.needed == 'true' || github.event_name == 'workflow_dispatch'
         uses: actions/cache@v4
         with:
           path: data
@@ -34,6 +51,7 @@ jobs:
             stock-db-
 
       - name: Run daily scan
+        if: steps.check.outputs.needed == 'true' || github.event_name == 'workflow_dispatch'
         env:
           TZ: Asia/Taipei
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -45,6 +63,7 @@ jobs:
         run: python -m src.main
 
       - name: Publish to GitHub Pages (docs/)
+        if: steps.check.outputs.needed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
