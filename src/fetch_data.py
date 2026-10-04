@@ -91,6 +91,23 @@ def is_trading_day(run_date: str, token: str = "", probe_stock_id: str = "2330")
     return len(rows) > 0
 
 
+def latest_trading_day(token: str = "", max_back_days: int = 10) -> str | None:
+    """Most recent date that actually has price data.
+
+    Anchoring on the data instead of the wall clock keeps a run correct when GitHub fires
+    a scheduled trigger hours late (often past midnight Taipei time), and it lets the next
+    run catch up after a holiday or a missed day.
+    """
+    today = datetime.date.today()
+    for back in range(max_back_days + 1):
+        day = today - datetime.timedelta(days=back)
+        if day.weekday() >= 5:
+            continue
+        if is_trading_day(day.isoformat(), token=token):
+            return day.isoformat()
+    return None
+
+
 class RateLimiter:
     def __init__(self, requests_per_hour: int):
         self.min_interval = 3600.0 / max(requests_per_hour, 1)

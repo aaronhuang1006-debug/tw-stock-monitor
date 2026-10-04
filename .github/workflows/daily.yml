@@ -3,10 +3,13 @@ name: Daily TW stock scan
 on:
   schedule:
     - cron: "0 10 * * 1-5"   # 10:00 UTC = 18:00 Asia/Taipei, Mon-Fri
-    - cron: "30 12 * * 1-5"  # 12:30 UTC = 20:30 Asia/Taipei — safety-net retry in case the
-                             # first trigger was skipped/delayed by GitHub's own scheduler
-                             # (a documented, occasional platform behavior, not under our control)
+    - cron: "30 12 * * 1-5"  # 12:30 UTC = 20:30 Asia/Taipei — backup trigger
   workflow_dispatch: {}
+
+# GitHub starts scheduled runs hours late (observed: ~6h, i.e. after midnight Taipei time).
+# src/main.py therefore never trusts the wall-clock date: it resolves the latest trading day
+# that has data and skips if that day's report is already published, so late or duplicate
+# triggers are harmless.
 
 permissions:
   contents: write
@@ -28,21 +31,7 @@ jobs:
       - name: Use CI settings template
         run: cp config/settings.ci.yaml config/settings.yaml
 
-      - name: Check whether today's report is already published
-        id: check
-        run: |
-          TODAY=$(TZ=Asia/Taipei date +%Y-%m-%d)
-          echo "today=$TODAY" >> "$GITHUB_OUTPUT"
-          if grep -q "\"date\": \"$TODAY\"" docs/index.html 2>/dev/null; then
-            echo "needed=false" >> "$GITHUB_OUTPUT"
-            echo "Already published for $TODAY — this is the safety-net trigger catching a normal day, skipping."
-          else
-            echo "needed=true" >> "$GITHUB_OUTPUT"
-            echo "Not yet published for $TODAY — running (either the normal trigger, or a catch-up)."
-          fi
-
       - name: Restore stock database cache
-        if: steps.check.outputs.needed == 'true' || github.event_name == 'workflow_dispatch'
         uses: actions/cache@v4
         with:
           path: data
@@ -51,7 +40,6 @@ jobs:
             stock-db-
 
       - name: Run daily scan
-        if: steps.check.outputs.needed == 'true' || github.event_name == 'workflow_dispatch'
         env:
           TZ: Asia/Taipei
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -60,17 +48,17 @@ jobs:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python -m src.main
+        run: python -m src.main ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
 
       - name: Publish to GitHub Pages (docs/)
-        if: steps.check.outputs.needed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/
           if git diff --cached --quiet; then
-            echo "no changes to publish (likely a non-trading day)"
+            echo "no changes to publish"
           else
             git commit -m "Update daily report ($(date -u +%Y-%m-%d))"
+            git pull --rebase origin main
             git push
           fi

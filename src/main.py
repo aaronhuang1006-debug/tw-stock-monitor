@@ -1,5 +1,4 @@
 import argparse
-import datetime
 import json
 import os
 import sys
@@ -36,11 +35,19 @@ def load_universe(path: str) -> list[dict]:
     return data["stocks"]
 
 
+def already_published(run_date: str) -> bool:
+    page = ROOT / "docs" / "index.html"
+    if not page.exists():
+        return False
+    return f'<span class="date">{run_date}(' in page.read_text(encoding="utf-8")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="台股K線技術指標監測系統")
     parser.add_argument("--limit", type=int, default=None, help="僅處理前N檔股票(測試用)")
     parser.add_argument("--skip-fetch", action="store_true", help="略過抓取,直接用DB既有資料計算(測試用)")
-    parser.add_argument("--date", type=str, default=None, help="指定抓取的目標日期(預設今天),格式YYYY-MM-DD")
+    parser.add_argument("--date", type=str, default=None, help="指定目標日期,格式YYYY-MM-DD(預設自動找最近一個有資料的交易日)")
+    parser.add_argument("--force", action="store_true", help="即使該日報表已發布過也重新執行並重發通知")
     args = parser.parse_args()
 
     cfg = load_settings()
@@ -49,7 +56,18 @@ def main() -> None:
         universe = universe[: args.limit]
 
     conn = db.connect(str(ROOT / cfg["db_path"]))
-    run_date = args.date or datetime.date.today().isoformat()
+
+    if args.date:
+        run_date = args.date
+    else:
+        run_date = fetch_data.latest_trading_day(token=cfg["finmind"]["token"])
+        if run_date is None:
+            print("[skip] 最近10天都查無交易資料,不產生報表也不發送通知。")
+            return
+        if not args.force and already_published(run_date):
+            print(f"[skip] {run_date} 的報表已經發布過,不重複執行也不重發通知。")
+            return
+        print(f"[run] 目標交易日: {run_date}", file=sys.stderr)
 
     fetch_stats = {"ok": 0, "failed": 0, "skipped": len(universe), "total": len(universe)}
     if not args.skip_fetch:
