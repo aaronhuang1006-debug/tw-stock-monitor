@@ -5,7 +5,7 @@
 finmind:
   token: ""              # 由環境變數 FINMIND_TOKEN 覆寫(選填)
   requests_per_hour: 280  # 保守值,對應匿名/免token額度;有設定 FINMIND_TOKEN 這個Secret的話可以調高到550
-  lookback_days: 150
+  lookback_days: 200
 
 universe_file: "config/universe.json"
 db_path: "data/stock.db"
@@ -15,6 +15,9 @@ indicators:
   ma_periods: [5, 20, 60]
   ma_cross_fast: 5
   ma_cross_slow: 20
+
+  weekly_ma_fast: 5       # 週線黃金/死亡交叉:5週線 vs 20週線(只在週收盤判斷)
+  weekly_ma_slow: 20
 
   rsi_period: 14
   rsi_overbought: 70

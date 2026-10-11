@@ -4,7 +4,7 @@ finmind:
   # 到 https://finmindtrade.com 免費註冊可取得 token,600次/小時(不填則用匿名 300次/小時)
   token: ""
   requests_per_hour: 280   # 保守值,低於匿名上限300;若有填token可調高到550
-  lookback_days: 150       # 每次抓取的日曆天數(約100個交易日,供MA60/布林/MACD計算)
+  lookback_days: 200       # 每次抓取的日曆天數(約135個交易日,供MA60/布林/MACD及20週線計算)
 
 universe_file: "config/universe.json"
 db_path: "data/stock.db"
@@ -14,6 +14,9 @@ indicators:
   ma_periods: [5, 20, 60]
   ma_cross_fast: 5
   ma_cross_slow: 20
+
+  weekly_ma_fast: 5       # 週線黃金/死亡交叉:5週線 vs 20週線(只在週收盤判斷)
+  weekly_ma_slow: 20
 
   rsi_period: 14
   rsi_overbought: 70

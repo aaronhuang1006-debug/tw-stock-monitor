@@ -1,3 +1,5 @@
+import datetime
+
 import pandas as pd
 
 SIGNAL_LABELS = {
@@ -12,6 +14,8 @@ SIGNAL_LABELS = {
     "volume_spike": "成交量異常放大({mult:.1f}倍於{period}日均量)",
     "new_high": "創{period}日新高",
     "new_low": "創{period}日新低",
+    "wma_golden_cross": "週線黃金交叉({fast}週線>{slow}週線)",
+    "wma_death_cross": "週線死亡交叉({fast}週線<{slow}週線)",
 }
 
 
@@ -61,3 +65,38 @@ def screen_stock(df: pd.DataFrame, cfg: dict) -> list[dict]:
         signals.append(("new_low", SIGNAL_LABELS["new_low"].format(period=nh_period)))
 
     return [{"signal": code, "detail": label} for code, label in signals]
+
+
+def screen_weekly_cross(df: pd.DataFrame, weekly: pd.DataFrame, cfg: dict) -> list[dict]:
+    """5-week vs 20-week MA cross, judged on completed weeks only so a mid-week wobble can't fire it.
+
+    A week counts as complete on its Friday run; if Friday was a holiday the week is judged on the
+    first run of the following week instead (and only then, so each cross is reported once).
+    """
+    fast, slow = cfg.get("weekly_ma_fast", 5), cfg.get("weekly_ma_slow", 20)
+    today = df.iloc[-1]["date"]
+    if datetime.date.fromisoformat(today).weekday() == 4:
+        idx = len(weekly) - 1
+    elif (
+        len(weekly) >= 2
+        and weekly.iloc[-1]["first_date"] == today
+        and datetime.date.fromisoformat(weekly.iloc[-2]["last_date"]).weekday() != 4
+    ):
+        idx = len(weekly) - 2
+    else:
+        return []
+    if idx < 1:
+        return []
+
+    cur, prev = weekly.iloc[idx], weekly.iloc[idx - 1]
+    fcol, scol = f"wma{fast}", f"wma{slow}"
+    if any(pd.isna(v) for v in (cur[fcol], cur[scol], prev[fcol], prev[scol])):
+        return []
+
+    if prev[fcol] <= prev[scol] and cur[fcol] > cur[scol]:
+        code = "wma_golden_cross"
+    elif prev[fcol] >= prev[scol] and cur[fcol] < cur[scol]:
+        code = "wma_death_cross"
+    else:
+        return []
+    return [{"signal": code, "detail": SIGNAL_LABELS[code].format(fast=fast, slow=slow)}]

@@ -48,6 +48,26 @@ def add_rolling_extreme(df: pd.DataFrame, period: int) -> pd.DataFrame:
     return df
 
 
+def weekly_table(df: pd.DataFrame, fast: int, slow: int) -> pd.DataFrame:
+    """Daily bars collapsed to Mon-Sun weeks: last close of each week plus its first/last trading date.
+    The final row is the in-progress week when the latest bar isn't a Friday."""
+    wk = pd.to_datetime(df["date"]).dt.to_period("W-SUN")
+    weekly = df.groupby(wk).agg(close=("close", "last"), first_date=("date", "first"), last_date=("date", "last"))
+    weekly[f"wma{fast}"] = weekly["close"].rolling(fast).mean()
+    weekly[f"wma{slow}"] = weekly["close"].rolling(slow).mean()
+    return weekly
+
+
+def weekly_snapshot(weekly: pd.DataFrame, fast: int, slow: int) -> dict:
+    """Current weekly MAs (this week's close counted as-is, so provisional until Friday)."""
+    last = weekly.iloc[-1]
+
+    def r(val):
+        return round(float(val), 2) if pd.notna(val) else None
+
+    return {"wma5": r(last[f"wma{fast}"]), "wma20": r(last[f"wma{slow}"])}
+
+
 def latest_snapshot(df: pd.DataFrame) -> dict:
     """Today's indicator values regardless of whether any signal fired — used for on-demand stock lookup."""
     last = df.iloc[-1]

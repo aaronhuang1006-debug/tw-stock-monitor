@@ -4,12 +4,14 @@ from collections import Counter
 from pathlib import Path
 
 SIGNAL_ORDER = [
-    "ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high",
-    "ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low",
+    "wma_golden_cross", "ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high",
+    "wma_death_cross", "ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low",
     "rsi_overbought", "rsi_oversold", "volume_spike",
 ]
 
 SIGNAL_SECTION_TITLE = {
+    "wma_golden_cross": "週線黃金交叉",
+    "wma_death_cross": "週線死亡交叉",
     "ma_golden_cross": "均線黃金交叉",
     "macd_golden_cross": "MACD金叉",
     "bb_breakout_upper": "突破布林上軌",
@@ -23,20 +25,24 @@ SIGNAL_SECTION_TITLE = {
     "volume_spike": "成交量異常放大",
 }
 
-BULLISH_SIGNALS = {"ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"}
-BEARISH_SIGNALS = {"ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low"}
+BULLISH_SIGNALS = {"wma_golden_cross", "ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"}
+BEARISH_SIGNALS = {"wma_death_cross", "ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low"}
 
 FILTER_CATEGORIES = {
-    "bull": {"label": "偏多", "codes": ["ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"], "bg": "#E1F5EE", "text": "#04342C"},
-    "bear": {"label": "偏空", "codes": ["ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low"], "bg": "#FAECE7", "text": "#4A1B0C"},
+    "bull": {"label": "偏多", "codes": ["wma_golden_cross", "ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"], "bg": "#E1F5EE", "text": "#04342C"},
+    "bear": {"label": "偏空", "codes": ["wma_death_cross", "ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low"], "bg": "#FAECE7", "text": "#4A1B0C"},
+    "wbull": {"label": "週線黃金交叉", "codes": ["wma_golden_cross"], "bg": "#E1F5EE", "text": "#04342C"},
+    "wbear": {"label": "週線死亡交叉", "codes": ["wma_death_cross"], "bg": "#FAECE7", "text": "#4A1B0C"},
     "overbought": {"label": "RSI超買", "codes": ["rsi_overbought"], "bg": "#FAEEDA", "text": "#412402"},
     "oversold": {"label": "RSI超賣", "codes": ["rsi_oversold"], "bg": "#E6F1FB", "text": "#042C53"},
     "volume": {"label": "成交量異常", "codes": ["volume_spike"], "bg": "#EEEDFE", "text": "#26215C"},
 }
 
 ARTIFACT_CATEGORIES = {
-    "bull": {"label": "偏多", "codes": ["ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"], "varBg": "--rise-soft", "varText": "--rise"},
-    "bear": {"label": "偏空", "codes": ["ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low"], "varBg": "--fall-soft", "varText": "--fall"},
+    "bull": {"label": "偏多", "codes": ["wma_golden_cross", "ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"], "varBg": "--rise-soft", "varText": "--rise"},
+    "bear": {"label": "偏空", "codes": ["wma_death_cross", "ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low"], "varBg": "--fall-soft", "varText": "--fall"},
+    "wbull": {"label": "週線黃金交叉", "codes": ["wma_golden_cross"], "varBg": "--rise-soft", "varText": "--rise"},
+    "wbear": {"label": "週線死亡交叉", "codes": ["wma_death_cross"], "varBg": "--fall-soft", "varText": "--fall"},
     "overbought": {"label": "RSI超買", "codes": ["rsi_overbought"], "varBg": "--warn-soft", "varText": "--warn"},
     "oversold": {"label": "RSI超賣", "codes": ["rsi_oversold"], "varBg": "--info-soft", "varText": "--info"},
     "volume": {"label": "成交量異常", "codes": ["volume_spike"], "varBg": "--vol-soft", "varText": "--vol"},
@@ -92,6 +98,16 @@ def build_market_narrative(alerts: list[dict], universe: list[dict], total_unive
         lines.append("整體訊號偏空。")
     elif bullish_ids or bearish_ids:
         lines.append("多空訊號互見,無明顯方向。")
+
+    w_up = [a for a in alerts if a["signal"] == "wma_golden_cross"]
+    w_down = [a for a in alerts if a["signal"] == "wma_death_cross"]
+    if w_up or w_down:
+        parts = []
+        if w_up:
+            parts.append("黃金交叉" + str(len(w_up)) + "檔(" + "、".join(a["stock_name"] for a in w_up[:5]) + ("等" if len(w_up) > 5 else "") + ")")
+        if w_down:
+            parts.append("死亡交叉" + str(len(w_down)) + "檔(" + "、".join(a["stock_name"] for a in w_down[:5]) + ("等" if len(w_down) > 5 else "") + ")")
+        lines.append("週線(5週線 vs 20週線)出現" + "、".join(parts) + "。")
 
     if overbought_ids or oversold_ids:
         lines.append(f"RSI超買{len(overbought_ids)}檔、超賣{len(oversold_ids)}檔。")
@@ -170,9 +186,10 @@ _ROW_HTML_LOCAL = (
 )
 
 _MINI_STATS = [
-    ("收盤", "close", ""), ("MA5", "ma5", ""), ("MA20", "ma20", ""), ("MA60", "ma60", ""), ("RSI", "rsi", ""),
-    ("MACD", "macd", ""), ("MACD訊號", "macd_signal", ""), ("布林上軌", "bb_upper", ""), ("布林下軌", "bb_lower", ""),
-    ("量比", "vol_ratio", "x"),
+    ("收盤", "close", ""), ("MA5", "ma5", ""), ("MA20", "ma20", ""), ("MA60", "ma60", ""),
+    ("週MA5", "wma5", ""), ("週MA20", "wma20", ""),
+    ("RSI", "rsi", ""), ("MACD", "macd", ""), ("MACD訊號", "macd_signal", ""),
+    ("布林上軌", "bb_upper", ""), ("布林下軌", "bb_lower", ""), ("量比", "vol_ratio", "x"),
 ]
 
 _CARD_STATS_JS = "[" + ",".join(f'["{label}","{key}","{suffix}"]' for label, key, suffix in _MINI_STATS) + "]"
@@ -253,7 +270,7 @@ td {{ padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align:
 .stock-card-head .name {{ font-size: 16px; }}
 .stock-card-head .industry {{ font-size: 12px; color: var(--text-secondary); }}
 .stock-card-badges {{ margin-bottom: 10px; }}
-.mini-grid {{ display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 8px; }}
+.mini-grid {{ display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 8px; }}
 .mini-stat {{ background: var(--bg); border-radius: 8px; padding: 8px 10px; }}
 .mini-stat .label {{ font-size: 11px; color: var(--text-secondary); margin: 0 0 2px; }}
 .mini-stat .value {{ font-size: 15px; font-weight: 500; margin: 0; }}
@@ -296,7 +313,7 @@ function codeCategory(code) {{
 }}
 function stockCats(stock) {{
   const s = new Set();
-  stock.signals.forEach(sig => {{ const c = codeCategory(sig.code); if (c) s.add(c); }});
+  stock.signals.forEach(sig => {{ for (const k in CATS) {{ if (CATS[k].codes.includes(sig.code)) s.add(k); }} }});
   return s;
 }}
 function badgeStyle(cat) {{
@@ -492,7 +509,7 @@ td.industry {{ color: var(--ink-soft); white-space: nowrap; font-size: 12.5px; }
 .stock-card-head .name {{ font-size: 17px; }}
 .stock-card-head .industry {{ font-size: 12px; color: var(--ink-faint); }}
 .stock-card-badges {{ margin-bottom: 12px; }}
-.mini-grid {{ display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 10px; }}
+.mini-grid {{ display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 10px; }}
 .mini-stat {{ background: var(--bg); border-radius: 8px; padding: 9px 11px; }}
 .mini-stat .label {{ font-size: 11px; color: var(--ink-faint); margin: 0 0 3px; }}
 .mini-stat .value {{ font-family: "IBM Plex Mono", monospace; font-size: 15px; font-weight: 500; margin: 0; }}
@@ -534,13 +551,13 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
   <div id="cards" class="cards" style="display:none"></div>
   <p id="empty-msg"></p>
   <div class="legend">
-    <span><i class="dot" style="background:var(--rise)"></i>偏多(新高/黃金交叉/突破上軌)</span>
-    <span><i class="dot" style="background:var(--fall)"></i>偏空(新低/死亡交叉/跌破下軌)</span>
+    <span><i class="dot" style="background:var(--rise)"></i>偏多(新高/黃金交叉/突破上軌/週線金叉)</span>
+    <span><i class="dot" style="background:var(--fall)"></i>偏空(新低/死亡交叉/跌破下軌/週線死叉)</span>
     <span><i class="dot" style="background:var(--warn)"></i>RSI超買</span>
     <span><i class="dot" style="background:var(--info)"></i>RSI超賣</span>
     <span><i class="dot" style="background:var(--vol)"></i>成交量異常</span>
   </div>
-  <footer>資料來源:FinMind · 指標:MA交叉/RSI/MACD/布林通道/成交量/新高新低,任一觸發即列入 · 搜尋可查全部{len(universe)}檔目前數值 · 僅供個人參考,非投資建議</footer>
+  <footer>資料來源:FinMind · 指標:MA交叉/週線交叉(5週vs20週,週收盤判斷)/RSI/MACD/布林通道/成交量/新高新低,任一觸發即列入 · 搜尋可查全部{len(universe)}檔目前數值 · 僅供個人參考,非投資建議</footer>
 </div>
 
 <script>
@@ -548,7 +565,7 @@ const STOCKS = {json.dumps(payload, ensure_ascii=False)};
 const CATS = {json.dumps(ARTIFACT_CATEGORIES, ensure_ascii=False)};
 {_SEARCH_SCRIPT}
 function codeCategory(code) {{ for (const key in CATS) {{ if (CATS[key].codes.includes(code)) return key; }} return null; }}
-function stockCats(stock) {{ const s = new Set(); stock.signals.forEach(sig => {{ const c = codeCategory(sig.code); if (c) s.add(c); }}); return s; }}
+function stockCats(stock) {{ const s = new Set(); stock.signals.forEach(sig => {{ for (const k in CATS) {{ if (CATS[k].codes.includes(sig.code)) s.add(k); }} }}); return s; }}
 function badgeStyle(cat) {{
   return cat ? `background:var(${{CATS[cat].varBg}});color:var(${{CATS[cat].varText}})` : "background:var(--bg);color:var(--ink-soft)";
 }}
