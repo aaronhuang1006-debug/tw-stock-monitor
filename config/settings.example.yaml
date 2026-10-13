@@ -42,9 +42,6 @@ notify:
     enabled: false
     bot_token: ""     # 到 Telegram @BotFather 申請
     chat_id: ""        # 你的 Telegram chat id
-  email:
-    enabled: false
-    to: ""   # 收件信箱,寄件用已連接的 Gmail 帳號
 
 artifact:
   # 用 Artifact 工具發布一次後把網址填在這裡,之後排程會固定 republish 同一個網址

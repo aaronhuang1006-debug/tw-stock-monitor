@@ -42,9 +42,6 @@ notify:
     enabled: true
     bot_token: ""   # 由環境變數 TELEGRAM_BOT_TOKEN 覆寫
     chat_id: ""     # 由環境變數 TELEGRAM_CHAT_ID 覆寫
-  email:
-    enabled: true
-    to: ""          # 由環境變數 EMAIL_TO 覆寫
 
 news:
   enabled: true

@@ -44,9 +44,6 @@ jobs:
           TZ: Asia/Taipei
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python -m src.main ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
 

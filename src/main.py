@@ -8,7 +8,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src import db, fetch_data, indicators, screener, report, notify_telegram, notify_email  # noqa: E402
+from src import db, fetch_data, indicators, screener, report, notify_telegram  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -25,8 +25,6 @@ def load_settings() -> dict:
         cfg["notify"]["telegram"]["bot_token"] = os.environ["TELEGRAM_BOT_TOKEN"]
     if os.environ.get("TELEGRAM_CHAT_ID"):
         cfg["notify"]["telegram"]["chat_id"] = os.environ["TELEGRAM_CHAT_ID"]
-    if os.environ.get("EMAIL_TO"):
-        cfg["notify"]["email"]["to"] = os.environ["EMAIL_TO"]
     return cfg
 
 
@@ -172,9 +170,7 @@ def main() -> None:
     if artifact_url:
         print(f"[artifact] ARTIFACT_PENDING source={artifact_path} url={artifact_url}")
 
-    # Notification failures must never block the report/Pages publish that
-    # already happened above, or fail the whole run for the other channel —
-    # each channel is independent and best-effort.
+    # A Telegram failure must never block the report/Pages publish that already happened above.
     tg_cfg = cfg["notify"]["telegram"]
     if tg_cfg.get("enabled") and tg_cfg.get("bot_token") and tg_cfg.get("chat_id"):
         try:
@@ -182,22 +178,6 @@ def main() -> None:
             print("[notify] telegram sent", file=sys.stderr)
         except Exception as exc:  # noqa: BLE001
             print(f"[notify] telegram FAILED: {exc}", file=sys.stderr)
-
-    email_cfg = cfg["notify"]["email"]
-    gmail_address = os.environ.get("GMAIL_ADDRESS")
-    gmail_app_password = os.environ.get("GMAIL_APP_PASSWORD")
-    if email_cfg.get("enabled") and email_cfg.get("to") and gmail_address and gmail_app_password:
-        subject = f"台股監測報表 {effective_date}"
-        body = summary + f"\n\n完整視覺化報表請見: {cfg.get('pages_url', '')}".rstrip()
-        try:
-            notify_email.send_email(gmail_address, gmail_app_password, email_cfg["to"], subject, body)
-            print("[notify] email sent via smtp", file=sys.stderr)
-        except Exception as exc:  # noqa: BLE001
-            print(f"[notify] email FAILED: {exc}", file=sys.stderr)
-    elif email_cfg.get("enabled") and email_cfg.get("to"):
-        # No SMTP credentials in this environment (e.g. a manual local run without
-        # GMAIL_APP_PASSWORD set) — leave a marker instead of failing outright.
-        print(f"[notify] EMAIL_PENDING to={email_cfg['to']} subject=台股監測報表 {effective_date}")
 
 
 if __name__ == "__main__":

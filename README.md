@@ -1,6 +1,6 @@
 # 台股技術指標監測系統
 
-每日收盤後自動抓取台灣50(0050)+中型100(0051)成分股+台股規模前20大股票型ETF(共170檔)的K線資料,計算常見技術指標,篩出當日觸發訊號的股票,並可推播到 Telegram / Email。
+每日收盤後自動抓取台灣50(0050)+中型100(0051)成分股+台股規模前20大股票型ETF(共170檔)的K線資料,計算常見技術指標,篩出當日觸發訊號的股票,並可推播到 Telegram。
 
 ## 監測範圍與指標
 
@@ -72,9 +72,6 @@ notify:
     enabled: true
     bot_token: "你的Bot Token"
     chat_id: "你的chat id"
-  email:
-    enabled: true
-    to: "你的信箱"
 ```
 
 **Telegram Bot 申請步驟**:
@@ -82,8 +79,6 @@ notify:
 2. 跟你的新 Bot 傳一則訊息(隨便說話),然後瀏覽器打開
    `https://api.telegram.org/bot<你的TOKEN>/getUpdates`,在回傳的 JSON 裡找到
    `"chat":{"id": ...}`,那個數字就是 chat_id
-
-**Email(本機手動執行時)**:若設定了 `GMAIL_ADDRESS` / `GMAIL_APP_PASSWORD` 環境變數,會直接用SMTP寄送;沒設定的話會印出 `EMAIL_PENDING` 標記行,不會失敗。
 
 ## 非交易日自動略過
 
@@ -104,9 +99,6 @@ notify:
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
 | `TELEGRAM_CHAT_ID` | 你的 Telegram chat id |
-| `EMAIL_TO` | 收件信箱 |
-| `GMAIL_ADDRESS` | 寄件用的 Gmail 帳號 |
-| `GMAIL_APP_PASSWORD` | Gmail「應用程式密碼」(不是登入密碼本身,到 Google帳號→安全性→兩步驟驗證→應用程式密碼 產生) |
 | `FINMIND_TOKEN`(選填) | FinMind 註冊token,有填的話可以把 `config/settings.ci.yaml` 裡的 `requests_per_hour` 調到550加快執行速度 |
 
 ## 資料庫
