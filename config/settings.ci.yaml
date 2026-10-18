@@ -5,7 +5,7 @@
 finmind:
   token: ""              # 由環境變數 FINMIND_TOKEN 覆寫(選填)
   requests_per_hour: 280  # 保守值,對應匿名/免token額度;有設定 FINMIND_TOKEN 這個Secret的話可以調高到550
-  lookback_days: 200
+  lookback_days: 460       # 約65週,供60週新高低與週MACD計算(每檔仍只花1次請求)
 
 universe_file: "config/universe.json"
 db_path: "data/stock.db"
@@ -18,6 +18,7 @@ indicators:
 
   weekly_ma_fast: 5       # 週線黃金/死亡交叉:5週線 vs 20週線(只在週收盤判斷)
   weekly_ma_slow: 20
+  weekly_new_high_low_period: 60   # 週線新高/新低看幾週;週線RSI/MACD/布林/量能沿用下方日線同一組參數
 
   rsi_period: 14
   rsi_overbought: 70

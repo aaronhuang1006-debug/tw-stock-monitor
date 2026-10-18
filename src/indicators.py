@@ -48,24 +48,49 @@ def add_rolling_extreme(df: pd.DataFrame, period: int) -> pd.DataFrame:
     return df
 
 
-def weekly_table(df: pd.DataFrame, fast: int, slow: int) -> pd.DataFrame:
-    """Daily bars collapsed to Mon-Sun weeks: last close of each week plus its first/last trading date.
-    The final row is the in-progress week when the latest bar isn't a Friday."""
+def weekly_table(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
+    """Daily bars collapsed to Mon-Sun weeks, with the same indicator set as the daily scan computed on them.
+
+    Each week keeps its last close, summed volume and first/last trading date. The final row is the
+    in-progress week when the latest bar isn't a Friday, so its values are provisional until week close.
+    """
     wk = pd.to_datetime(df["date"]).dt.to_period("W-SUN")
-    weekly = df.groupby(wk).agg(close=("close", "last"), first_date=("date", "first"), last_date=("date", "last"))
+    weekly = df.groupby(wk).agg(
+        close=("close", "last"), volume=("volume", "sum"), first_date=("date", "first"), last_date=("date", "last")
+    )
+    fast, slow = cfg.get("weekly_ma_fast", 5), cfg.get("weekly_ma_slow", 20)
     weekly[f"wma{fast}"] = weekly["close"].rolling(fast).mean()
     weekly[f"wma{slow}"] = weekly["close"].rolling(slow).mean()
+    weekly = add_rsi(weekly, cfg["rsi_period"])
+    weekly = add_macd(weekly, cfg["macd_fast"], cfg["macd_slow"], cfg["macd_signal"])
+    weekly = add_bollinger(weekly, cfg["bollinger_period"], cfg["bollinger_std"])
+    weekly = add_volume_avg(weekly, cfg["volume_avg_period"])
+    weekly = add_rolling_extreme(weekly, cfg.get("weekly_new_high_low_period", cfg["new_high_low_period"]))
     return weekly
 
 
-def weekly_snapshot(weekly: pd.DataFrame, fast: int, slow: int) -> dict:
-    """Current weekly MAs (this week's close counted as-is, so provisional until Friday)."""
+def weekly_snapshot(weekly: pd.DataFrame, cfg: dict) -> dict:
+    """Current weekly values (this week's close/volume counted as-is, so provisional until Friday)."""
     last = weekly.iloc[-1]
+    fast, slow = cfg.get("weekly_ma_fast", 5), cfg.get("weekly_ma_slow", 20)
 
-    def r(val):
-        return round(float(val), 2) if pd.notna(val) else None
+    def r(val, nd=2):
+        return round(float(val), nd) if pd.notna(val) else None
 
-    return {"wma5": r(last[f"wma{fast}"]), "wma20": r(last[f"wma{slow}"])}
+    vol_ratio = None
+    if pd.notna(last.get("vol_avg")) and last.get("vol_avg"):
+        vol_ratio = round(float(last["volume"]) / float(last["vol_avg"]), 2)
+
+    return {
+        "wma5": r(last[f"wma{fast}"]),
+        "wma20": r(last[f"wma{slow}"]),
+        "wrsi": r(last.get("rsi"), 1),
+        "wmacd": r(last.get("macd")),
+        "wmacd_signal": r(last.get("macd_signal")),
+        "wbb_upper": r(last.get("bb_upper")),
+        "wbb_lower": r(last.get("bb_lower")),
+        "wvol_ratio": vol_ratio,
+    }
 
 
 def latest_snapshot(df: pd.DataFrame) -> dict:

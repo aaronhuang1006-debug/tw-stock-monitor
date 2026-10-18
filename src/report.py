@@ -3,15 +3,29 @@ import json
 from collections import Counter
 from pathlib import Path
 
-SIGNAL_ORDER = [
-    "wma_golden_cross", "ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high",
-    "wma_death_cross", "ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low",
-    "rsi_overbought", "rsi_oversold", "volume_spike",
-]
+WEEKLY_BULLISH = ["wma_golden_cross", "w_macd_golden_cross", "w_bb_breakout_upper", "w_new_high"]
+WEEKLY_BEARISH = ["wma_death_cross", "w_macd_death_cross", "w_bb_breakout_lower", "w_new_low"]
+DAILY_BULLISH = ["ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"]
+DAILY_BEARISH = ["ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low"]
+WEEKLY_CODES = WEEKLY_BULLISH + WEEKLY_BEARISH + ["w_rsi_overbought", "w_rsi_oversold", "w_volume_spike"]
+
+SIGNAL_ORDER = (
+    WEEKLY_BULLISH + DAILY_BULLISH + WEEKLY_BEARISH + DAILY_BEARISH
+    + ["w_rsi_overbought", "rsi_overbought", "w_rsi_oversold", "rsi_oversold", "w_volume_spike", "volume_spike"]
+)
 
 SIGNAL_SECTION_TITLE = {
     "wma_golden_cross": "週線黃金交叉",
     "wma_death_cross": "週線死亡交叉",
+    "w_macd_golden_cross": "週MACD金叉",
+    "w_macd_death_cross": "週MACD死叉",
+    "w_bb_breakout_upper": "週線突破布林上軌",
+    "w_bb_breakout_lower": "週線跌破布林下軌",
+    "w_new_high": "創60週新高",
+    "w_new_low": "創60週新低",
+    "w_rsi_overbought": "週RSI超買(中期過熱)",
+    "w_rsi_oversold": "週RSI超賣(中期超跌)",
+    "w_volume_spike": "週成交量異常放大",
     "ma_golden_cross": "均線黃金交叉",
     "macd_golden_cross": "MACD金叉",
     "bb_breakout_upper": "突破布林上軌",
@@ -25,27 +39,27 @@ SIGNAL_SECTION_TITLE = {
     "volume_spike": "成交量異常放大",
 }
 
-BULLISH_SIGNALS = {"wma_golden_cross", "ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"}
-BEARISH_SIGNALS = {"wma_death_cross", "ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low"}
+BULLISH_SIGNALS = set(WEEKLY_BULLISH + DAILY_BULLISH)
+BEARISH_SIGNALS = set(WEEKLY_BEARISH + DAILY_BEARISH)
 
 FILTER_CATEGORIES = {
-    "bull": {"label": "偏多", "codes": ["wma_golden_cross", "ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"], "bg": "#E1F5EE", "text": "#04342C"},
-    "bear": {"label": "偏空", "codes": ["wma_death_cross", "ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low"], "bg": "#FAECE7", "text": "#4A1B0C"},
-    "wbull": {"label": "週線黃金交叉", "codes": ["wma_golden_cross"], "bg": "#E1F5EE", "text": "#04342C"},
-    "wbear": {"label": "週線死亡交叉", "codes": ["wma_death_cross"], "bg": "#FAECE7", "text": "#4A1B0C"},
-    "overbought": {"label": "RSI超買", "codes": ["rsi_overbought"], "bg": "#FAEEDA", "text": "#412402"},
-    "oversold": {"label": "RSI超賣", "codes": ["rsi_oversold"], "bg": "#E6F1FB", "text": "#042C53"},
-    "volume": {"label": "成交量異常", "codes": ["volume_spike"], "bg": "#EEEDFE", "text": "#26215C"},
+    "bull": {"label": "偏多", "codes": WEEKLY_BULLISH + DAILY_BULLISH, "bg": "#E1F5EE", "text": "#04342C"},
+    "bear": {"label": "偏空", "codes": WEEKLY_BEARISH + DAILY_BEARISH, "bg": "#FAECE7", "text": "#4A1B0C"},
+    "wbull": {"label": "週線偏多", "codes": WEEKLY_BULLISH, "bg": "#E1F5EE", "text": "#04342C"},
+    "wbear": {"label": "週線偏空", "codes": WEEKLY_BEARISH, "bg": "#FAECE7", "text": "#4A1B0C"},
+    "overbought": {"label": "RSI超買", "codes": ["rsi_overbought", "w_rsi_overbought"], "bg": "#FAEEDA", "text": "#412402"},
+    "oversold": {"label": "RSI超賣", "codes": ["rsi_oversold", "w_rsi_oversold"], "bg": "#E6F1FB", "text": "#042C53"},
+    "volume": {"label": "成交量異常", "codes": ["volume_spike", "w_volume_spike"], "bg": "#EEEDFE", "text": "#26215C"},
 }
 
 ARTIFACT_CATEGORIES = {
-    "bull": {"label": "偏多", "codes": ["wma_golden_cross", "ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"], "varBg": "--rise-soft", "varText": "--rise"},
-    "bear": {"label": "偏空", "codes": ["wma_death_cross", "ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low"], "varBg": "--fall-soft", "varText": "--fall"},
-    "wbull": {"label": "週線黃金交叉", "codes": ["wma_golden_cross"], "varBg": "--rise-soft", "varText": "--rise"},
-    "wbear": {"label": "週線死亡交叉", "codes": ["wma_death_cross"], "varBg": "--fall-soft", "varText": "--fall"},
-    "overbought": {"label": "RSI超買", "codes": ["rsi_overbought"], "varBg": "--warn-soft", "varText": "--warn"},
-    "oversold": {"label": "RSI超賣", "codes": ["rsi_oversold"], "varBg": "--info-soft", "varText": "--info"},
-    "volume": {"label": "成交量異常", "codes": ["volume_spike"], "varBg": "--vol-soft", "varText": "--vol"},
+    "bull": {"label": "偏多", "codes": WEEKLY_BULLISH + DAILY_BULLISH, "varBg": "--rise-soft", "varText": "--rise"},
+    "bear": {"label": "偏空", "codes": WEEKLY_BEARISH + DAILY_BEARISH, "varBg": "--fall-soft", "varText": "--fall"},
+    "wbull": {"label": "週線偏多", "codes": WEEKLY_BULLISH, "varBg": "--rise-soft", "varText": "--rise"},
+    "wbear": {"label": "週線偏空", "codes": WEEKLY_BEARISH, "varBg": "--fall-soft", "varText": "--fall"},
+    "overbought": {"label": "RSI超買", "codes": ["rsi_overbought", "w_rsi_overbought"], "varBg": "--warn-soft", "varText": "--warn"},
+    "oversold": {"label": "RSI超賣", "codes": ["rsi_oversold", "w_rsi_oversold"], "varBg": "--info-soft", "varText": "--info"},
+    "volume": {"label": "成交量異常", "codes": ["volume_spike", "w_volume_spike"], "varBg": "--vol-soft", "varText": "--vol"},
 }
 
 
@@ -99,15 +113,14 @@ def build_market_narrative(alerts: list[dict], universe: list[dict], total_unive
     elif bullish_ids or bearish_ids:
         lines.append("多空訊號互見,無明顯方向。")
 
-    w_up = [a for a in alerts if a["signal"] == "wma_golden_cross"]
-    w_down = [a for a in alerts if a["signal"] == "wma_death_cross"]
-    if w_up or w_down:
-        parts = []
-        if w_up:
-            parts.append("黃金交叉" + str(len(w_up)) + "檔(" + "、".join(a["stock_name"] for a in w_up[:5]) + ("等" if len(w_up) > 5 else "") + ")")
-        if w_down:
-            parts.append("死亡交叉" + str(len(w_down)) + "檔(" + "、".join(a["stock_name"] for a in w_down[:5]) + ("等" if len(w_down) > 5 else "") + ")")
-        lines.append("週線(5週線 vs 20週線)出現" + "、".join(parts) + "。")
+    weekly_parts = []
+    for code in [c for c in SIGNAL_ORDER if c in WEEKLY_CODES]:
+        items = [a for a in alerts if a["signal"] == code]
+        if items:
+            names = "、".join(a["stock_name"] for a in items[:5]) + ("等" if len(items) > 5 else "")
+            weekly_parts.append(f"{SIGNAL_SECTION_TITLE[code]}{len(items)}檔({names})")
+    if weekly_parts:
+        lines.append("週線(週收盤判斷)出現" + "、".join(weekly_parts) + "。")
 
     if overbought_ids or oversold_ids:
         lines.append(f"RSI超買{len(overbought_ids)}檔、超賣{len(oversold_ids)}檔。")
@@ -187,9 +200,11 @@ _ROW_HTML_LOCAL = (
 
 _MINI_STATS = [
     ("收盤", "close", ""), ("MA5", "ma5", ""), ("MA20", "ma20", ""), ("MA60", "ma60", ""),
-    ("週MA5", "wma5", ""), ("週MA20", "wma20", ""),
     ("RSI", "rsi", ""), ("MACD", "macd", ""), ("MACD訊號", "macd_signal", ""),
     ("布林上軌", "bb_upper", ""), ("布林下軌", "bb_lower", ""), ("量比", "vol_ratio", "x"),
+    ("週MA5", "wma5", ""), ("週MA20", "wma20", ""), ("週RSI", "wrsi", ""), ("週MACD", "wmacd", ""),
+    ("週MACD訊號", "wmacd_signal", ""), ("週布林上軌", "wbb_upper", ""), ("週布林下軌", "wbb_lower", ""),
+    ("週量比", "wvol_ratio", "x"),
 ]
 
 _CARD_STATS_JS = "[" + ",".join(f'["{label}","{key}","{suffix}"]' for label, key, suffix in _MINI_STATS) + "]"
@@ -551,13 +566,13 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
   <div id="cards" class="cards" style="display:none"></div>
   <p id="empty-msg"></p>
   <div class="legend">
-    <span><i class="dot" style="background:var(--rise)"></i>偏多(新高/黃金交叉/突破上軌/週線金叉)</span>
-    <span><i class="dot" style="background:var(--fall)"></i>偏空(新低/死亡交叉/跌破下軌/週線死叉)</span>
+    <span><i class="dot" style="background:var(--rise)"></i>偏多(新高/黃金交叉/MACD金叉/突破上軌,日線與週線)</span>
+    <span><i class="dot" style="background:var(--fall)"></i>偏空(新低/死亡交叉/MACD死叉/跌破下軌,日線與週線)</span>
     <span><i class="dot" style="background:var(--warn)"></i>RSI超買</span>
     <span><i class="dot" style="background:var(--info)"></i>RSI超賣</span>
     <span><i class="dot" style="background:var(--vol)"></i>成交量異常</span>
   </div>
-  <footer>資料來源:FinMind · 指標:MA交叉/週線交叉(5週vs20週,週收盤判斷)/RSI/MACD/布林通道/成交量/新高新低,任一觸發即列入 · 搜尋可查全部{len(universe)}檔目前數值 · 僅供個人參考,非投資建議</footer>
+  <footer>資料來源:FinMind · 指標:MA交叉/RSI/MACD/布林通道/成交量/新高新低,日線與週線各算一套(週線用5週vs20週、60週新高低,只在週收盤判斷;卡片上週線數值為含本週的暫時值),任一觸發即列入 · 搜尋可查全部{len(universe)}檔目前數值 · 僅供個人參考,非投資建議</footer>
 </div>
 
 <script>

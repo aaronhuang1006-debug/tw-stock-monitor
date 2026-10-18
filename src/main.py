@@ -112,15 +112,14 @@ def main() -> None:
         if df.iloc[-1]["date"] != effective_date:
             continue
 
-        w_fast, w_slow = ind_cfg.get("weekly_ma_fast", 5), ind_cfg.get("weekly_ma_slow", 20)
-        weekly = indicators.weekly_table(df, w_fast, w_slow)
+        weekly = indicators.weekly_table(df, ind_cfg)
 
         snapshot = indicators.latest_snapshot(df)
-        snapshot.update(indicators.weekly_snapshot(weekly, w_fast, w_slow))
+        snapshot.update(indicators.weekly_snapshot(weekly, ind_cfg))
         snapshot.update({"stock_id": stock_id, "name": name_map.get(stock_id, "")})
         all_snapshots.append(snapshot)
 
-        signals = screener.screen_stock(df, ind_cfg) + screener.screen_weekly_cross(df, weekly, ind_cfg)
+        signals = screener.screen_stock(df, ind_cfg) + screener.screen_weekly(df, weekly, ind_cfg)
         for s in signals:
             all_alerts.append(
                 {
