@@ -8,7 +8,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src import db, fetch_data, indicators, screener, report, notify_telegram  # noqa: E402
+from src import db, fetch_data, history, indicators, screener, report, notify_telegram  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -46,6 +46,7 @@ def main() -> None:
     parser.add_argument("--skip-fetch", action="store_true", help="略過抓取,直接用DB既有資料計算(測試用)")
     parser.add_argument("--date", type=str, default=None, help="指定目標日期,格式YYYY-MM-DD(預設自動找最近一個有資料的交易日)")
     parser.add_argument("--force", action="store_true", help="即使該日報表已發布過也重新執行並重發通知")
+    parser.add_argument("--no-notify", action="store_true", help="不發送 Telegram(補資料、重算時用)")
     args = parser.parse_args()
 
     cfg = load_settings()
@@ -101,6 +102,7 @@ def main() -> None:
     ind_cfg = cfg["indicators"]
     all_alerts = []
     all_snapshots = []
+    tails = {}
     name_map = {s["stock_id"]: s["name"] for s in universe}
 
     for stock in universe:
@@ -111,6 +113,8 @@ def main() -> None:
         df = indicators.compute_all(df, ind_cfg)
         if df.iloc[-1]["date"] != effective_date:
             continue
+
+        tails[stock_id] = df[["date", "close", "ma20"]].tail(60)
 
         weekly = indicators.weekly_table(df, ind_cfg)
 
@@ -150,9 +154,24 @@ def main() -> None:
         print(f"[news] done: {len(triggered_ids)} 檔已查詢", file=sys.stderr)
 
     db.save_alerts(conn, effective_date, all_alerts)
+
+    # Trend history: rebuild any missing past days from the price DB, then record today.
+    hist_path = ROOT / "docs" / "history.json"
+    hist = history.load(hist_path)
+    hist_days = cfg.get("history_days", 120)
+    added = history.replay_missing(
+        conn, universe, ind_cfg, hist, exclude={effective_date}, max_days=hist_days,
+        min_rows=ind_cfg["new_high_low_period"],
+    )
+    history.put_day_from_alerts(hist, effective_date, len(all_snapshots), all_alerts)
+    history.trim(hist, hist_days)
+    history.save(hist_path, hist)
+    print(f"[history] {len(hist['days'])} 天紀錄(本次回補 {added} 天)", file=sys.stderr)
+    series = history.build_series(tails)
     csv_path = report.write_csv_report(str(ROOT / cfg["report_dir"]), effective_date, all_alerts)
     html_path = report.write_html_report(str(ROOT / cfg["report_dir"]), effective_date, all_alerts, universe, news_map, all_snapshots)
-    artifact_path = report.write_artifact_source(str(ROOT / cfg["report_dir"]), effective_date, all_alerts, universe, news_map, all_snapshots)
+    artifact_path = report.write_artifact_source(str(ROOT / cfg["report_dir"]), effective_date, all_alerts, universe, news_map, all_snapshots,
+                                              history=hist, series=series)
     summary = report.build_summary_text(effective_date, all_alerts, fetch_stats, universe)
 
     # Stable path for GitHub Pages (docs/ on main) — overwritten every run,
@@ -171,7 +190,9 @@ def main() -> None:
 
     # A Telegram failure must never block the report/Pages publish that already happened above.
     tg_cfg = cfg["notify"]["telegram"]
-    if tg_cfg.get("enabled") and tg_cfg.get("bot_token") and tg_cfg.get("chat_id"):
+    if args.no_notify:
+        print("[notify] --no-notify: skipped telegram", file=sys.stderr)
+    elif tg_cfg.get("enabled") and tg_cfg.get("bot_token") and tg_cfg.get("chat_id"):
         try:
             notify_telegram.send_telegram(tg_cfg["bot_token"], tg_cfg["chat_id"], summary)
             print("[notify] telegram sent", file=sys.stderr)

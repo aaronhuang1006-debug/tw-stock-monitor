@@ -3,6 +3,8 @@ import json
 from collections import Counter
 from pathlib import Path
 
+from . import trend_ui
+
 WEEKLY_BULLISH = ["wma_golden_cross", "w_macd_golden_cross", "w_bb_breakout_upper", "w_new_high"]
 WEEKLY_BEARISH = ["wma_death_cross", "w_macd_death_cross", "w_bb_breakout_lower", "w_new_low"]
 DAILY_BULLISH = ["ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"]
@@ -61,6 +63,22 @@ ARTIFACT_CATEGORIES = {
     "oversold": {"label": "RSI超賣", "codes": ["rsi_oversold", "w_rsi_oversold"], "varBg": "--info-soft", "varText": "--info"},
     "volume": {"label": "成交量異常", "codes": ["volume_spike", "w_volume_spike"], "varBg": "--vol-soft", "varText": "--vol"},
 }
+
+
+TREND_METRICS = [
+    {"key": "all", "label": "觸發檔數", "series": [{"name": "觸發", "codes": "*", "color": "--accent"}]},
+    {"key": "bs", "label": "偏多 vs 偏空", "series": [
+        {"name": "偏多", "codes": WEEKLY_BULLISH + DAILY_BULLISH, "color": "--rise"},
+        {"name": "偏空", "codes": WEEKLY_BEARISH + DAILY_BEARISH, "color": "--fall", "dash": "6 4"}]},
+    {"key": "rsi", "label": "RSI 超買 vs 超賣", "series": [
+        {"name": "超買", "codes": ["rsi_overbought", "w_rsi_overbought"], "color": "--warn"},
+        {"name": "超賣", "codes": ["rsi_oversold", "w_rsi_oversold"], "color": "--info", "dash": "6 4"}]},
+    {"key": "wk", "label": "週線偏多 vs 偏空", "weekly": True,
+     "note": "週線訊號只在週收盤判斷(遇週五休市則在下週第一個交易日),所以這張圖以週為單位。",
+     "series": [
+        {"name": "週偏多", "codes": WEEKLY_BULLISH, "color": "--rise"},
+        {"name": "週偏空", "codes": WEEKLY_BEARISH, "color": "--fall", "dash": "6 4"}]},
+]
 
 
 def _group_by_signal(alerts: list[dict]) -> dict:
@@ -436,17 +454,22 @@ function cardHtml(stock) {{
     ${{badgesHtml}}
     <div class="mini-grid">${{grid}}</div>
     ${{newsHtml}}
+    ${{stockChartHtml(stock)}}
   </div>`;
 }}
 """
 
 
 def build_artifact_html(run_date: str, alerts: list[dict], universe: list[dict], news_map: dict | None = None,
-                         snapshots: list[dict] | None = None) -> str:
+                         snapshots: list[dict] | None = None, history: dict | None = None,
+                         series: dict | None = None) -> str:
     """Standalone page matching the published Claude Artifact's design (red=偏多/rise, green=偏空/fall per TWSE convention). The scheduled task reads this file's content and republishes it to the same artifact URL each trading day."""
     narrative = build_market_narrative(alerts, universe, len(universe))
     payload = _build_unified_payload(alerts, universe, news_map, snapshots)
     triggered_count = len({a["stock_id"] for a in alerts})
+    hist_json = json.dumps(history or {"codes": [], "days": []}, ensure_ascii=False, separators=(",", ":"))
+    series_json = json.dumps(series or {"dates": [], "v": {}}, ensure_ascii=False, separators=(",", ":"))
+    siglabel_json = json.dumps(SIGNAL_SECTION_TITLE, ensure_ascii=False)
     weekday = "日一二三四五六"[__import__("datetime").date.fromisoformat(run_date).isoweekday() % 7]
 
     return f"""<title>台股訊號板</title>
@@ -535,6 +558,7 @@ td.industry {{ color: var(--ink-soft); white-space: nowrap; font-size: 12.5px; }
 .dot {{ width: 8px; height: 8px; border-radius: 50%; display: inline-block; }}
 footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top: 1px solid var(--line); padding-top: 14px; }}
 @media (max-width: 560px) {{ .stats {{ grid-template-columns: repeat(2, 1fr); }} body {{ padding: 20px 14px 40px; }} }}
+{trend_ui.TREND_CSS}
 </style>
 
 <div class="wrap">
@@ -551,6 +575,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
     <div class="stat"><p class="label">偏空</p><p class="value fall">{len({a["stock_id"] for a in alerts if a["signal"] in BEARISH_SIGNALS})}</p></div>
   </div>
 
+{trend_ui.TREND_HTML}
   <div class="search">
     <input type="text" id="search-input" placeholder="搜尋代號或名稱(例如 2330 或 台積電),查任一檔目前指標數值">
     <button type="button" id="search-clear">清除</button>
@@ -578,6 +603,13 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 <script>
 const STOCKS = {json.dumps(payload, ensure_ascii=False)};
 const CATS = {json.dumps(ARTIFACT_CATEGORIES, ensure_ascii=False)};
+const HIST = {hist_json};
+const SER = {series_json};
+const SIGLABEL = {siglabel_json};
+const TREND_METRICS = {json.dumps(TREND_METRICS, ensure_ascii=False)};
+const BULL_CODES = {json.dumps(sorted(BULLISH_SIGNALS))};
+const BEAR_CODES = {json.dumps(sorted(BEARISH_SIGNALS))};
+{trend_ui.TREND_JS}
 {_SEARCH_SCRIPT}
 function codeCategory(code) {{ for (const key in CATS) {{ if (CATS[key].codes.includes(code)) return key; }} return null; }}
 function stockCats(stock) {{ const s = new Set(); stock.signals.forEach(sig => {{ for (const k in CATS) {{ if (CATS[k].codes.includes(sig.code)) s.add(k); }} }}); return s; }}
@@ -619,6 +651,7 @@ function render() {{
   renderFilters();
   const visible = getVisible();
   const searching = searchQuery.trim().length > 0;
+  document.getElementById("trend").hidden = searching;
   const emptyMsg = document.getElementById("empty-msg");
   const tableWrap = document.getElementById("table-wrap");
   const cardsWrap = document.getElementById("cards");
@@ -653,16 +686,18 @@ function render() {{
 
 document.getElementById("search-input").addEventListener("input", (e) => {{ searchQuery = e.target.value; render(); }});
 document.getElementById("search-clear").addEventListener("click", () => {{ searchQuery = ""; document.getElementById("search-input").value = ""; render(); }});
+renderTrend();
 render();
 </script>
 """
 
 
 def write_artifact_source(report_dir: str, run_date: str, alerts: list[dict], universe: list[dict],
-                           news_map: dict | None = None, snapshots: list[dict] | None = None) -> str:
+                           news_map: dict | None = None, snapshots: list[dict] | None = None,
+                           history: dict | None = None, series: dict | None = None) -> str:
     Path(report_dir).mkdir(parents=True, exist_ok=True)
     path = Path(report_dir) / f"{run_date}_artifact.html"
-    path.write_text(build_artifact_html(run_date, alerts, universe, news_map, snapshots), encoding="utf-8")
+    path.write_text(build_artifact_html(run_date, alerts, universe, news_map, snapshots, history, series), encoding="utf-8")
     return str(path)
 
 

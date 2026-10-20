@@ -102,6 +102,18 @@ notify:
 | `TELEGRAM_CHAT_ID` | 你的 Telegram chat id |
 | `FINMIND_TOKEN`(選填) | FinMind 註冊token,有填的話可以把 `config/settings.ci.yaml` 裡的 `requests_per_hour` 調到550加快執行速度 |
 
+## 趨勢紀錄
+
+每天跑完會把當天各股觸發的訊號記進 `docs/history.json`(和網頁一起 commit,不依賴雲端快取,保留最近 `history_days` 個交易日,預設120)。第一次執行或有漏掉的交易日時,會用價格資料庫重算過去的訊號自動回補,不用等時間累積。
+
+網頁上有兩個地方可以看趨勢:
+- **市場趨勢**:觸發檔數、偏多 vs 偏空、RSI超買 vs 超賣、週線偏多 vs 偏空(以週為單位)四張折線圖,可切換近30日/近60日/全部,滑鼠移上去看當日數字,「看數字」展開表格
+- **個股走勢與訊號紀錄**:搜尋任一檔股票,卡片下方有近60個交易日的收盤價與20日均線,有訊號的日子標上紅點(偏多)/綠點(偏空)/橘點(多空並見或其他),下面列出最近有訊號的日期與內容
+
+Artifact 版本不含趨勢紀錄(Artifact 不能讀外部檔案),完整功能請看 GitHub Pages。
+
+手動補跑某天又不想重發通知時,在 Actions 的 Run workflow 把 `notify` 取消勾選(或本機加 `--no-notify`)。
+
 ## 資料庫
 
 `data/stock.db`(SQLite),儲存每檔股票的歷史日K線,供指標滾動計算使用。首次執行會回補約135個交易日(200個日曆天)的歷史資料,供20週線等指標計算。GitHub Actions環境下靠actions/cache在每次執行間保留這個檔案。

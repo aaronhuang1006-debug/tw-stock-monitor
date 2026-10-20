@@ -6,6 +6,7 @@ finmind:
   requests_per_hour: 280   # 保守值,低於匿名上限300;若有填token可調高到550
   lookback_days: 460       # 每次抓取的日曆天數(約65週,供60週新高低與週MACD計算;每檔仍只花1次請求)
 
+history_days: 120        # 趨勢紀錄保留的交易日數
 universe_file: "config/universe.json"
 db_path: "data/stock.db"
 report_dir: "reports"

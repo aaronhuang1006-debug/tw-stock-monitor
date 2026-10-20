@@ -46,6 +46,10 @@ def already_fetched(conn: sqlite3.Connection, stock_id: str, run_date: str) -> b
     return cur.fetchone() is not None
 
 
+def earliest_date(conn: sqlite3.Connection, stock_id: str):
+    return conn.execute("SELECT MIN(date) FROM daily_price WHERE stock_id=?", (stock_id,)).fetchone()[0]
+
+
 def load_price_history(conn: sqlite3.Connection, stock_id: str, min_rows: int = 1):
     import pandas as pd
 

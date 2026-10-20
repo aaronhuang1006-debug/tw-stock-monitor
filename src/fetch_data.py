@@ -134,7 +134,13 @@ def fetch_universe(conn, universe: list[dict], run_date: str, token: str, reques
     ok, failed, skipped = 0, 0, 0
     for i, stock in enumerate(universe):
         stock_id = stock["stock_id"]
-        if skip_done and db.already_fetched(conn, stock_id, run_date):
+        # A stock fetched today is skipped unless the stored history doesn't reach back to the
+        # window start (e.g. the lookback was just extended), in which case it is fetched again.
+        earliest = db.earliest_date(conn, stock_id)
+        covered = earliest is not None and earliest <= (
+            datetime.date.fromisoformat(start_date) + datetime.timedelta(days=10)
+        ).isoformat()
+        if skip_done and covered and db.already_fetched(conn, stock_id, run_date):
             skipped += 1
             if progress_cb:
                 progress_cb(i + 1, len(universe), stock_id, "skipped")

@@ -4,7 +4,12 @@ on:
   schedule:
     - cron: "0 15 * * 1-5"   # 15:00 UTC = 23:00 Asia/Taipei, Mon-Fri (the intended run time)
     - cron: "30 9 * * 1-5"   # 09:30 UTC = 17:30 Asia/Taipei — early trigger: GitHub has been starting runs ~6h late, so this one lands near 23:00
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      notify:
+        description: "Send the Telegram message (turn off when re-running a day only to rebuild data/history)"
+        type: boolean
+        default: true
 
 # GitHub starts scheduled runs hours late (observed: ~6h, i.e. after midnight Taipei time).
 # src/main.py therefore never trusts the wall-clock date: it resolves the latest trading day
@@ -45,7 +50,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python -m src.main ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
+        run: python -m src.main ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }} ${{ (github.event_name == 'workflow_dispatch' && inputs.notify == false) && '--no-notify' || '' }}
 
       - name: Publish to GitHub Pages (docs/)
         run: |
