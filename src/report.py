@@ -439,8 +439,7 @@ _ROW_HTML_ARTIFACT = (
 _CARD_HTML_FN_ARTIFACT = f"""
 function cardHtml(stock) {{
   const badges = stock.signals.map(sig => {{
-    const cat = codeCategory(sig.code);
-    const style = badgeStyle(cat);
+    const style = sigStyle(sig.code);
     return `<span class="badge" style="${{style}}">${{sig.detail}}</span>`;
   }}).join('');
   const badgesHtml = badges ? `<div class="stock-card-badges">${{badges}}</div>` : '';
@@ -457,6 +456,103 @@ function cardHtml(stock) {{
     ${{stockChartHtml(stock)}}
   </div>`;
 }}
+"""
+
+
+# ---- Weekly MA cross panel (artifact / Pages only). Plain strings, spliced into the f-string page. ----
+# Weekly crosses are only judged on the weekly close, so on every other day they vanish from the
+# signal table. This panel reads HIST and keeps showing the latest weekly close until the next one.
+WEEKLY_CROSS_CSS = """
+.wx { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px 14px; margin-bottom: 18px; box-shadow: var(--shadow); }
+.wx[hidden] { display: none; }
+.wx-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.wx-head h2 { font-family: "Source Serif 4", Georgia, serif; font-size: 18px; font-weight: 600; margin: 0; }
+.wx-when { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--ink-soft); }
+.wx-when.today { color: var(--accent); font-weight: 500; }
+.wx-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.wx-col { min-width: 0; border-radius: 8px; padding: 12px 12px 10px; border-left: 4px solid; }
+.wx-col.gold { background: var(--rise-soft); border-color: var(--rise); }
+.wx-col.death { background: var(--fall-soft); border-color: var(--fall); }
+.wx-col h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; display: flex; align-items: baseline; gap: 8px; }
+.wx-col.gold h3 { color: var(--rise); }
+.wx-col.death h3 { color: var(--fall); }
+.wx-col h3 b { font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 500; line-height: 1; }
+.wx-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.wx-chip { font-family: inherit; font-size: 12.5px; padding: 4px 9px; border-radius: 6px; border: 0; cursor: pointer; color: var(--paper); font-weight: 500; }
+.wx-chip .c { font-family: "IBM Plex Mono", monospace; opacity: .85; margin-right: 5px; }
+.wx-col.gold .wx-chip { background: var(--rise); }
+.wx-col.death .wx-chip { background: var(--fall); }
+.wx-chip:hover { filter: brightness(1.08); }
+.wx-chip:focus-visible, .wx-prev summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wx-none { font-size: 12.5px; color: var(--ink-faint); margin: 0; }
+.wx-prev { margin-top: 10px; font-size: 12.5px; color: var(--ink-soft); }
+.wx-prev summary { cursor: pointer; width: fit-content; }
+.wx-prev-row { display: grid; grid-template-columns: 52px 1fr; gap: 4px 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.wx-prev-row:last-child { border-bottom: none; }
+.wx-prev-row .d { font-family: "IBM Plex Mono", monospace; color: var(--ink-faint); }
+.wx-prev-row .g { color: var(--rise); }
+.wx-prev-row .x { color: var(--fall); }
+.wx-prev-row div { min-width: 0; }
+.wx-note { font-size: 12px; color: var(--ink-faint); margin: 8px 0 0; }
+@media (max-width: 560px) { .wx-cols { grid-template-columns: 1fr; } }
+"""
+
+WEEKLY_CROSS_HTML = """
+  <section id="wx" class="wx" aria-label="週線交叉">
+    <div class="wx-head"><h2>週線交叉</h2><span id="wx-when" class="wx-when"></span></div>
+    <div class="wx-cols">
+      <div class="wx-col gold"><h3>黃金交叉 <b id="wx-g-n">0</b></h3><div id="wx-g" class="wx-chips"></div></div>
+      <div class="wx-col death"><h3>死亡交叉 <b id="wx-d-n">0</b></h3><div id="wx-d" class="wx-chips"></div></div>
+    </div>
+    <details class="wx-prev"><summary>前幾週的週線交叉</summary><div id="wx-prev"></div></details>
+    <p class="wx-note">5週線與20週線交叉,只在週收盤判斷。下一次週收盤之前,這裡都保留最近一週的結果;點股票可查看指標與走勢。</p>
+  </section>
+"""
+
+WEEKLY_CROSS_JS = """
+const WX_SOLID = { wma_golden_cross: "--rise", wma_death_cross: "--fall" };
+function sigStyle(code) {
+  return WX_SOLID[code] ? `background:var(${WX_SOLID[code]});color:var(--paper);font-weight:600` : badgeStyle(codeCategory(code));
+}
+function renderWeeklyCross() {
+  const sec = document.getElementById("wx");
+  const codes = HIST.codes || [], days = HIST.days || [];
+  const gi = codes.indexOf("wma_golden_cross"), di = codes.indexOf("wma_death_cross");
+  const wIdx = new Set(codes.map((c, i) => (c.startsWith("w_") || c.startsWith("wma_")) ? i : -1).filter(i => i >= 0));
+  const order = {}, names = {};
+  STOCKS.forEach((s, i) => { order[s.stock_id] = i; names[s.stock_id] = s.name; });
+  const weekDays = days.filter(d => Object.values(d.s || {}).some(v => v.some(i => wIdx.has(i))));
+  if (gi < 0 || di < 0 || !weekDays.length) { sec.dataset.empty = "1"; sec.hidden = true; return; }
+  const pick = (d, idx) => Object.keys(d.s).filter(id => d.s[id].includes(idx)).sort((a, b) => (order[a] ?? 1e9) - (order[b] ?? 1e9));
+  const wd = ds => "日一二三四五六"[new Date(ds + "T00:00:00").getDay()];
+  const md = ds => ds.slice(5).replace("-", "/");
+  const last = weekDays[weekDays.length - 1];
+  const today = days.length && days[days.length - 1].d === last.d;
+  const when = document.getElementById("wx-when");
+  when.textContent = today ? `今天週收盤判斷 · ${last.d}` : `最近一次週收盤:${last.d}(週${wd(last.d)})`;
+  when.className = "wx-when" + (today ? " today" : "");
+  const fill = (id, list) => {
+    document.getElementById(id + "-n").textContent = list.length;
+    const el = document.getElementById(id);
+    el.innerHTML = list.length ? "" : '<p class="wx-none">這週沒有</p>';
+    list.forEach(sid => {
+      const b = document.createElement("button"); b.type = "button"; b.className = "wx-chip";
+      b.innerHTML = `<span class="c">${sid}</span>${names[sid] || ""}`;
+      b.addEventListener("click", () => {
+        const inp = document.getElementById("search-input"); inp.value = sid; searchQuery = sid; render();
+        inp.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      el.appendChild(b);
+    });
+  };
+  fill("wx-g", pick(last, gi));
+  fill("wx-d", pick(last, di));
+  const nm = list => list.length ? list.map(id => names[id] || id).join("、") : "—";
+  const prev = weekDays.slice(0, -1).slice(-6).reverse();
+  document.getElementById("wx-prev").innerHTML = prev.length ? prev.map(d =>
+    `<div class="wx-prev-row"><span class="d">${md(d.d)}</span><div><span class="g">金叉 ${pick(d, gi).length}:</span>${nm(pick(d, gi))}<br><span class="x">死叉 ${pick(d, di).length}:</span>${nm(pick(d, di))}</div></div>`
+  ).join("") : '<p class="wx-none">還沒有更早的紀錄</p>';
+}
 """
 
 
@@ -559,6 +655,7 @@ td.industry {{ color: var(--ink-soft); white-space: nowrap; font-size: 12.5px; }
 footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top: 1px solid var(--line); padding-top: 14px; }}
 @media (max-width: 560px) {{ .stats {{ grid-template-columns: repeat(2, 1fr); }} body {{ padding: 20px 14px 40px; }} }}
 {trend_ui.TREND_CSS}
+{WEEKLY_CROSS_CSS}
 </style>
 
 <div class="wrap">
@@ -574,7 +671,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
     <div class="stat"><p class="label">偏多</p><p class="value rise">{len({a["stock_id"] for a in alerts if a["signal"] in BULLISH_SIGNALS})}</p></div>
     <div class="stat"><p class="label">偏空</p><p class="value fall">{len({a["stock_id"] for a in alerts if a["signal"] in BEARISH_SIGNALS})}</p></div>
   </div>
-
+{WEEKLY_CROSS_HTML}
 {trend_ui.TREND_HTML}
   <div class="search">
     <input type="text" id="search-input" placeholder="搜尋代號或名稱(例如 2330 或 台積電),查任一檔目前指標數值">
@@ -617,6 +714,7 @@ function badgeStyle(cat) {{
   return cat ? `background:var(${{CATS[cat].varBg}});color:var(${{CATS[cat].varText}})` : "background:var(--bg);color:var(--ink-soft)";
 }}
 {_CARD_HTML_FN_ARTIFACT}
+{WEEKLY_CROSS_JS}
 
 let activeFilter = "all";
 let searchQuery = "";
@@ -652,6 +750,7 @@ function render() {{
   const visible = getVisible();
   const searching = searchQuery.trim().length > 0;
   document.getElementById("trend").hidden = searching;
+  document.getElementById("wx").hidden = searching || document.getElementById("wx").dataset.empty === "1";
   const emptyMsg = document.getElementById("empty-msg");
   const tableWrap = document.getElementById("table-wrap");
   const cardsWrap = document.getElementById("cards");
@@ -676,7 +775,7 @@ function render() {{
   const rows = document.getElementById("rows"); rows.innerHTML = "";
   visible.forEach(stock => {{
     const tr = document.createElement("tr");
-    const badges = stock.signals.map(sig => `<span class="badge" style="${{badgeStyle(codeCategory(sig.code))}}">${{sig.detail}}</span>`).join("");
+    const badges = stock.signals.map(sig => `<span class="badge" style="${{sigStyle(sig.code)}}">${{sig.detail}}</span>`).join("");
     const news = (stock.news || []).map(n => `<a href="${{n.link}}" target="_blank" rel="noopener">↗ ${{n.title}}</a>`).join("");
     const newsHtml = news ? `<div class="news">${{news}}</div>` : "";
     tr.innerHTML = `{_ROW_HTML_ARTIFACT}`;
@@ -687,6 +786,7 @@ function render() {{
 document.getElementById("search-input").addEventListener("input", (e) => {{ searchQuery = e.target.value; render(); }});
 document.getElementById("search-clear").addEventListener("click", () => {{ searchQuery = ""; document.getElementById("search-input").value = ""; render(); }});
 renderTrend();
+renderWeeklyCross();
 render();
 </script>
 """
