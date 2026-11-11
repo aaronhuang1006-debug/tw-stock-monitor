@@ -10,10 +10,17 @@ WEEKLY_BEARISH = ["wma_death_cross", "w_macd_death_cross", "w_bb_breakout_lower"
 DAILY_BULLISH = ["ma_golden_cross", "macd_golden_cross", "bb_breakout_upper", "new_high"]
 DAILY_BEARISH = ["ma_death_cross", "macd_death_cross", "bb_breakout_lower", "new_low"]
 WEEKLY_CODES = WEEKLY_BULLISH + WEEKLY_BEARISH + ["w_rsi_overbought", "w_rsi_oversold", "w_volume_spike"]
+# Close crossing its own 5-day / 20-day line. Kept out of 偏多/偏空 so those counts stay comparable with
+# earlier days; the 5-day ones fire on ~25% of the universe a day, so they stay off the Telegram lists.
+MA5_POS = ["close_above_ma5", "close_below_ma5"]
+MA20_POS = ["close_above_ma20", "close_below_ma20"]
+MA_POS_CODES = MA20_POS + MA5_POS
+NOISY_CODES = set(MA5_POS)  # shown on the board under their own filter; not counted as "觸發", not listed in Telegram
 
 SIGNAL_ORDER = (
     WEEKLY_BULLISH + DAILY_BULLISH + WEEKLY_BEARISH + DAILY_BEARISH
     + ["w_rsi_overbought", "rsi_overbought", "w_rsi_oversold", "rsi_oversold", "w_volume_spike", "volume_spike"]
+    + MA_POS_CODES
 )
 
 SIGNAL_SECTION_TITLE = {
@@ -39,6 +46,10 @@ SIGNAL_SECTION_TITLE = {
     "rsi_overbought": "RSI超買(短線過熱)",
     "rsi_oversold": "RSI超賣(短線超跌)",
     "volume_spike": "成交量異常放大",
+    "close_above_ma20": "站上月線(20日)",
+    "close_below_ma20": "跌破月線(20日)",
+    "close_above_ma5": "站上5日線",
+    "close_below_ma5": "跌破5日線",
 }
 
 BULLISH_SIGNALS = set(WEEKLY_BULLISH + DAILY_BULLISH)
@@ -52,6 +63,8 @@ FILTER_CATEGORIES = {
     "overbought": {"label": "RSI超買", "codes": ["rsi_overbought", "w_rsi_overbought"], "bg": "#FAEEDA", "text": "#412402"},
     "oversold": {"label": "RSI超賣", "codes": ["rsi_oversold", "w_rsi_oversold"], "bg": "#E6F1FB", "text": "#042C53"},
     "volume": {"label": "成交量異常", "codes": ["volume_spike", "w_volume_spike"], "bg": "#EEEDFE", "text": "#26215C"},
+    "ma20": {"label": "月線(20日)", "codes": MA20_POS, "bg": "#E3EBEC", "text": "#1F3A44"},
+    "ma5": {"label": "5日線", "codes": MA5_POS, "bg": "#E3EBEC", "text": "#1F3A44"},
 }
 
 ARTIFACT_CATEGORIES = {
@@ -62,11 +75,13 @@ ARTIFACT_CATEGORIES = {
     "overbought": {"label": "RSI超買", "codes": ["rsi_overbought", "w_rsi_overbought"], "varBg": "--warn-soft", "varText": "--warn"},
     "oversold": {"label": "RSI超賣", "codes": ["rsi_oversold", "w_rsi_oversold"], "varBg": "--info-soft", "varText": "--info"},
     "volume": {"label": "成交量異常", "codes": ["volume_spike", "w_volume_spike"], "varBg": "--vol-soft", "varText": "--vol"},
+    "ma20": {"label": "月線(20日)", "codes": MA20_POS, "varBg": "--accent-soft", "varText": "--accent"},
+    "ma5": {"label": "5日線", "codes": MA5_POS, "varBg": "--accent-soft", "varText": "--accent"},
 }
 
 
 TREND_METRICS = [
-    {"key": "all", "label": "觸發檔數", "series": [{"name": "觸發", "codes": "*", "color": "--accent"}]},
+    {"key": "all", "label": "觸發檔數", "series": [{"name": "觸發", "codes": [c for c in SIGNAL_ORDER if c not in MA_POS_CODES], "color": "--accent"}]},
     {"key": "bs", "label": "偏多 vs 偏空", "series": [
         {"name": "偏多", "codes": WEEKLY_BULLISH + DAILY_BULLISH, "color": "--rise"},
         {"name": "偏空", "codes": WEEKLY_BEARISH + DAILY_BEARISH, "color": "--fall", "dash": "6 4"}]},
@@ -103,7 +118,7 @@ def _top_industries(stock_ids: set, industry_map: dict, top_n: int = 2) -> list[
 
 def build_market_narrative(alerts: list[dict], universe: list[dict], total_universe: int) -> str:
     industry_map = {s["stock_id"]: s.get("industry", "其他") for s in universe}
-    by_stock = _group_by_stock(alerts)
+    by_stock = _group_by_stock([a for a in alerts if a["signal"] not in NOISY_CODES])
 
     bullish_ids = {a["stock_id"] for a in alerts if a["signal"] in BULLISH_SIGNALS}
     bearish_ids = {a["stock_id"] for a in alerts if a["signal"] in BEARISH_SIGNALS}
@@ -142,6 +157,13 @@ def build_market_narrative(alerts: list[dict], universe: list[dict], total_unive
 
     if overbought_ids or oversold_ids:
         lines.append(f"RSI超買{len(overbought_ids)}檔、超賣{len(oversold_ids)}檔。")
+
+    ma_counts = {c: len({a["stock_id"] for a in alerts if a["signal"] == c}) for c in MA_POS_CODES}
+    if any(ma_counts.values()):
+        lines.append(
+            f"收盤站上月線{ma_counts['close_above_ma20']}檔、跌破月線{ma_counts['close_below_ma20']}檔;"
+            f"站上5日線{ma_counts['close_above_ma5']}檔、跌破5日線{ma_counts['close_below_ma5']}檔。"
+        )
     if volume_ids:
         industries = "、".join(_top_industries(volume_ids, industry_map))
         lines.append(f"成交量異常放大共{len(volume_ids)}檔,以{industries}居多,值得留意資金是否轉向。")
@@ -511,8 +533,11 @@ WEEKLY_CROSS_HTML = """
 
 WEEKLY_CROSS_JS = """
 const WX_SOLID = { wma_golden_cross: "--rise", wma_death_cross: "--fall" };
+const MA_SOFT = { close_above_ma20: "rise", close_below_ma20: "fall", close_above_ma5: "rise", close_below_ma5: "fall" };
 function sigStyle(code) {
-  return WX_SOLID[code] ? `background:var(${WX_SOLID[code]});color:var(--paper);font-weight:600` : badgeStyle(codeCategory(code));
+  if (WX_SOLID[code]) return `background:var(${WX_SOLID[code]});color:var(--paper);font-weight:600`;
+  if (MA_SOFT[code]) return `background:var(--${MA_SOFT[code]}-soft);color:var(--${MA_SOFT[code]})`;
+  return badgeStyle(codeCategory(code));
 }
 function renderWeeklyCross() {
   const sec = document.getElementById("wx");
@@ -539,8 +564,7 @@ function renderWeeklyCross() {
       const b = document.createElement("button"); b.type = "button"; b.className = "wx-chip";
       b.innerHTML = `<span class="c">${sid}</span>${names[sid] || ""}`;
       b.addEventListener("click", () => {
-        const inp = document.getElementById("search-input"); inp.value = sid; searchQuery = sid; render();
-        inp.scrollIntoView({ behavior: "smooth", block: "start" });
+        navTo({ q: sid, f: "all" }, true);
       });
       el.appendChild(b);
     });
@@ -556,13 +580,77 @@ function renderWeeklyCross() {
 """
 
 
+# ---- In-page navigation: 上一頁 / 回主畫面 (artifact / Pages only) ----
+# The page is one view whose state is (search text, active filter, scroll). A small stack of those
+# states backs the two buttons; browser history is left alone because the page runs inside a frame.
+NAV_CSS = """
+.navbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; align-items: center; gap: 8px;
+  margin: -8px 0 12px; padding: 8px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
+.navbar[hidden] { display: none; }
+.navbar button { font-family: inherit; font-size: 13px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line-strong);
+  background: var(--paper); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.navbar button:hover:not(:disabled) { border-color: var(--accent); }
+.navbar button:disabled { opacity: .45; cursor: default; }
+.navbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.navbar .where { margin-left: auto; font-size: 12.5px; color: var(--ink-soft); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+"""
+
+NAV_HTML = """
+  <nav id="navbar" class="navbar" aria-label="頁面導覽" hidden>
+    <button type="button" id="nav-back"><span aria-hidden="true">‹</span>上一頁</button>
+    <button type="button" id="nav-home"><span aria-hidden="true">⌂</span>回主畫面</button>
+    <span id="nav-where" class="where"></span>
+  </nav>
+"""
+
+NAV_JS = """
+const NAV_STACK = [];
+function navState() { return { q: searchQuery, f: activeFilter, y: window.scrollY }; }
+function navApply(st, scroll) {
+  searchQuery = st.q; activeFilter = st.f;
+  document.getElementById("search-input").value = st.q;
+  render();
+  if (scroll === "top") window.scrollTo(0, 0);
+  else if (typeof scroll === "number") window.scrollTo(0, scroll);
+}
+function navTo(next, toTop) {
+  const cur = navState();
+  if (cur.q === next.q && cur.f === next.f) return;
+  NAV_STACK.push(cur);
+  navApply({ q: next.q, f: next.f }, toTop ? "top" : undefined);
+}
+function navBack() {
+  if (!NAV_STACK.length) return;
+  const st = NAV_STACK.pop();
+  navApply(st, st.y);
+}
+function navHome() {
+  NAV_STACK.length = 0;
+  navApply({ q: "", f: "all" }, "top");
+}
+function renderNav() {
+  const home = !searchQuery.trim() && activeFilter === "all";
+  const bar = document.getElementById("navbar");
+  bar.hidden = home && !NAV_STACK.length;
+  document.getElementById("nav-back").disabled = !NAV_STACK.length;
+  document.getElementById("nav-home").disabled = home;
+  const where = document.getElementById("nav-where");
+  if (searchQuery.trim()) where.textContent = `搜尋:${searchQuery.trim()}`;
+  else if (activeFilter !== "all") where.textContent = `篩選:${CATS[activeFilter] ? CATS[activeFilter].label : activeFilter}`;
+  else where.textContent = "主畫面";
+}
+document.getElementById("nav-back").addEventListener("click", navBack);
+document.getElementById("nav-home").addEventListener("click", navHome);
+"""
+
+
 def build_artifact_html(run_date: str, alerts: list[dict], universe: list[dict], news_map: dict | None = None,
                          snapshots: list[dict] | None = None, history: dict | None = None,
                          series: dict | None = None) -> str:
     """Standalone page matching the published Claude Artifact's design (red=偏多/rise, green=偏空/fall per TWSE convention). The scheduled task reads this file's content and republishes it to the same artifact URL each trading day."""
     narrative = build_market_narrative(alerts, universe, len(universe))
     payload = _build_unified_payload(alerts, universe, news_map, snapshots)
-    triggered_count = len({a["stock_id"] for a in alerts})
+    triggered_count = len({a["stock_id"] for a in alerts if a["signal"] not in NOISY_CODES})
     hist_json = json.dumps(history or {"codes": [], "days": []}, ensure_ascii=False, separators=(",", ":"))
     series_json = json.dumps(series or {"dates": [], "v": {}}, ensure_ascii=False, separators=(",", ":"))
     siglabel_json = json.dumps(SIGNAL_SECTION_TITLE, ensure_ascii=False)
@@ -656,9 +744,11 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 @media (max-width: 560px) {{ .stats {{ grid-template-columns: repeat(2, 1fr); }} body {{ padding: 20px 14px 40px; }} }}
 {trend_ui.TREND_CSS}
 {WEEKLY_CROSS_CSS}
+{NAV_CSS}
 </style>
 
 <div class="wrap">
+{NAV_HTML}
   <div class="masthead">
     <h1>台股訊號板</h1>
     <span class="date">{run_date}(週{weekday})</span>
@@ -693,8 +783,9 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
     <span><i class="dot" style="background:var(--warn)"></i>RSI超買</span>
     <span><i class="dot" style="background:var(--info)"></i>RSI超賣</span>
     <span><i class="dot" style="background:var(--vol)"></i>成交量異常</span>
+    <span><i class="dot" style="background:var(--accent)"></i>收盤站上/跌破5日線、月線(紅=站上、綠=跌破;5日線另列,不計入觸發檔數)</span>
   </div>
-  <footer>資料來源:FinMind · 指標:MA交叉/RSI/MACD/布林通道/成交量/新高新低,日線與週線各算一套(週線用5週vs20週、60週新高低,只在週收盤判斷;卡片上週線數值為含本週的暫時值),任一觸發即列入 · 搜尋可查全部{len(universe)}檔目前數值 · 僅供個人參考,非投資建議</footer>
+  <footer>資料來源:FinMind · 指標:MA交叉/收盤穿越5日線與月線/RSI/MACD/布林通道/成交量/新高新低,日線與週線各算一套(週線用5週vs20週、60週新高低,只在週收盤判斷;卡片上週線數值為含本週的暫時值),任一觸發即列入 · 搜尋可查全部{len(universe)}檔目前數值 · 僅供個人參考,非投資建議</footer>
 </div>
 
 <script>
@@ -706,6 +797,8 @@ const SIGLABEL = {siglabel_json};
 const TREND_METRICS = {json.dumps(TREND_METRICS, ensure_ascii=False)};
 const BULL_CODES = {json.dumps(sorted(BULLISH_SIGNALS))};
 const BEAR_CODES = {json.dumps(sorted(BEARISH_SIGNALS))};
+const NOISY = new Set({json.dumps(sorted(NOISY_CODES))});
+const isCore = s => s.signals.some(g => !NOISY.has(g.code));
 {trend_ui.TREND_JS}
 {_SEARCH_SCRIPT}
 function codeCategory(code) {{ for (const key in CATS) {{ if (CATS[key].codes.includes(code)) return key; }} return null; }}
@@ -724,7 +817,7 @@ function renderFilters() {{
   if (searchQuery.trim()) {{ el.style.display = "none"; return; }}
   el.style.display = "flex";
   const triggered = STOCKS.filter(s => s.signals.length > 0);
-  const counts = {{ all: triggered.length }};
+  const counts = {{ all: STOCKS.filter(isCore).length }};
   Object.keys(CATS).forEach(k => {{ counts[k] = triggered.filter(a => stockCats(a).has(k)).length; }});
   el.innerHTML = "";
   const items = [["all", "全部"]].concat(Object.keys(CATS).map(k => [k, CATS[k].label]));
@@ -732,7 +825,7 @@ function renderFilters() {{
     const btn = document.createElement("button"); btn.type = "button";
     btn.textContent = `${{label}} (${{counts[key]}})`;
     btn.className = key === activeFilter ? "active" : "";
-    btn.addEventListener("click", () => {{ activeFilter = key; render(); }});
+    btn.addEventListener("click", () => {{ navTo({{ q: "", f: key }}); }});
     el.appendChild(btn);
   }});
 }}
@@ -742,7 +835,7 @@ function getVisible() {{
     return STOCKS.filter(s => matchesSearch(s, searchQuery));
   }}
   const triggered = STOCKS.filter(s => s.signals.length > 0);
-  return activeFilter === "all" ? triggered : triggered.filter(s => stockCats(s).has(activeFilter));
+  return activeFilter === "all" ? STOCKS.filter(isCore) : triggered.filter(s => stockCats(s).has(activeFilter));
 }}
 
 function render() {{
@@ -751,6 +844,7 @@ function render() {{
   const searching = searchQuery.trim().length > 0;
   document.getElementById("trend").hidden = searching;
   document.getElementById("wx").hidden = searching || document.getElementById("wx").dataset.empty === "1";
+  renderNav();
   const emptyMsg = document.getElementById("empty-msg");
   const tableWrap = document.getElementById("table-wrap");
   const cardsWrap = document.getElementById("cards");
@@ -783,8 +877,12 @@ function render() {{
   }});
 }}
 
-document.getElementById("search-input").addEventListener("input", (e) => {{ searchQuery = e.target.value; render(); }});
-document.getElementById("search-clear").addEventListener("click", () => {{ searchQuery = ""; document.getElementById("search-input").value = ""; render(); }});
+document.getElementById("search-input").addEventListener("input", (e) => {{
+  if (!searchQuery.trim() && e.target.value.trim()) NAV_STACK.push(navState());
+  searchQuery = e.target.value; render();
+}});
+document.getElementById("search-clear").addEventListener("click", () => {{ navTo({{ q: "", f: activeFilter }}); }});
+{NAV_JS}
 renderTrend();
 renderWeeklyCross();
 render();
@@ -802,8 +900,9 @@ def write_artifact_source(report_dir: str, run_date: str, alerts: list[dict], un
 
 
 def build_summary_text(run_date: str, alerts: list[dict], fetch_stats: dict, universe: list[dict]) -> str:
-    by_stock = _group_by_stock(alerts)
-    groups = _group_by_signal(alerts)
+    listed = [a for a in alerts if a["signal"] not in NOISY_CODES]  # 5日線 crosses: counted in the narrative only
+    by_stock = _group_by_stock(listed)
+    groups = _group_by_signal(listed)
 
     lines = [
         f"📊 台股監測報表 {run_date}",

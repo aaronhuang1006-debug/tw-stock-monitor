@@ -25,7 +25,30 @@ SIGNAL_LABELS = {
     "w_volume_spike": "週量異常放大({mult:.1f}倍於{period}週均量)",
     "w_new_high": "創{period}週新高",
     "w_new_low": "創{period}週新低",
+    "close_above_ma5": "站上5日線",
+    "close_below_ma5": "跌破5日線",
+    "close_above_ma20": "站上月線(20日)",
+    "close_below_ma20": "跌破月線(20日)",
 }
+
+PRICE_MA_PERIODS = (5, 20)
+
+
+def _price_ma_crosses(today, yesterday) -> list[tuple[str, str]]:
+    """Close crossing its own 5-day / 20-day moving average (站上/跌破), judged against the bar before."""
+    out = []
+    for p in PRICE_MA_PERIODS:
+        col = f"ma{p}"
+        if col not in today or not all(pd.notna(v) for v in (today["close"], today[col], yesterday["close"], yesterday[col])):
+            continue
+        if yesterday["close"] <= yesterday[col] and today["close"] > today[col]:
+            code = f"close_above_ma{p}"
+        elif yesterday["close"] >= yesterday[col] and today["close"] < today[col]:
+            code = f"close_below_ma{p}"
+        else:
+            continue
+        out.append((code, SIGNAL_LABELS[code]))
+    return out
 
 
 def _screen_bars(today, yesterday, cfg: dict, prefix: str, fast_col: str, slow_col: str,
@@ -80,6 +103,7 @@ def screen_stock(df: pd.DataFrame, cfg: dict) -> list[dict]:
         df.iloc[-1], df.iloc[-2], cfg, "", f"ma{fast}", f"ma{slow}",
         ("ma_golden_cross", "ma_death_cross"), {"fast": fast, "slow": slow}, cfg["new_high_low_period"],
     )
+    signals += _price_ma_crosses(df.iloc[-1], df.iloc[-2])
     return [{"signal": code, "detail": label} for code, label in signals]
 
 
