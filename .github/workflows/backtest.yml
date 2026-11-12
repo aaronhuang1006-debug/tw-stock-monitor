@@ -1,0 +1,66 @@
+name: Signal backtest
+
+# Runs src/backtest.py against ~10 years of FinMind prices and commits the results to backtest/results/.
+# It keeps its own price database (data/backtest.db, separate cache key), so the daily scan's data is untouched.
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "First date of price history"
+        default: "2016-01-01"
+  push:
+    branches: [main]
+    paths:
+      - "src/backtest.py"
+      - ".github/workflows/backtest.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backtest
+  cancel-in-progress: true
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Use CI settings template
+        run: cp config/settings.ci.yaml config/settings.yaml
+
+      - name: Restore backtest price cache
+        uses: actions/cache@v4
+        with:
+          path: data/backtest.db
+          key: backtest-db-${{ github.run_id }}
+          restore-keys: |
+            backtest-db-
+
+      - name: Run backtest
+        env:
+          TZ: Asia/Taipei
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python -m src.backtest --start "${{ inputs.start || '2016-01-01' }}"
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backtest/results
+          if git diff --cached --quiet; then
+            echo "no changes"
+          else
+            git commit -m "Backtest results ($(date -u +%Y-%m-%d))"
+            git pull --rebase origin main
+            git push
+          fi
