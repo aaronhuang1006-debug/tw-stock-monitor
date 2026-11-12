@@ -15,36 +15,54 @@ WEEKLY_CODES = WEEKLY_BULLISH + WEEKLY_BEARISH + ["w_rsi_overbought", "w_rsi_ove
 MA5_POS = ["close_above_ma5", "close_below_ma5"]
 MA20_POS = ["close_above_ma20", "close_below_ma20"]
 MA_POS_CODES = MA20_POS + MA5_POS
+# Groups from the 2016-2026 backtest (backtest/results): 60-day excess return vs the universe average.
+# New highs / RSI overbought / upper-band breaks kept outperforming; new lows / RSI oversold / lower-band
+# breaks kept underperforming; every crossover (MA, MACD, weekly MA, close vs 5/20-day line) was ~noise.
+STRONG = ["w_new_high", "new_high", "w_rsi_overbought", "rsi_overbought", "w_bb_breakout_upper", "bb_breakout_upper"]
+WEAK = ["w_new_low", "new_low", "w_rsi_oversold", "rsi_oversold", "w_bb_breakout_lower", "bb_breakout_lower"]
+CROSS = ["wma_golden_cross", "wma_death_cross", "w_macd_golden_cross", "w_macd_death_cross",
+         "ma_golden_cross", "ma_death_cross", "macd_golden_cross", "macd_death_cross"]
+STRONG_SET, WEAK_SET = set(STRONG), set(WEAK)
+BACKTEST = {  # numbers quoted on the board; from backtest/results/results.json (2016-01 to 2026-11, 169 stocks)
+    "period": "2016–2026",
+    "strong": "創新高、RSI超買、突破布林上軌之後60個交易日,平均贏同期170檔平均1.6%~4.5%",
+    "weak": "創新低、RSI超賣、跌破布林下軌之後60個交易日,平均輸1.0%~3.2%",
+    "cross": "均線、MACD、週線的黃金/死亡交叉,以及站上/跌破5日線、月線,之後的表現跟平均差不多(多在±0.9%內,低於來回交易成本0.585%)",
+    "volume": "成交量放大2倍之後60個交易日平均贏1.0%",
+    "thermo": "歷史上全市場超賣比例≥30%的37個交易日,之後60個交易日170檔平均漲14.6%(平時6.0%);但只來自約5~6次大跌,樣本很少",
+}
+RSI_NOTE = {
+    "rsi_overbought": "近14日漲勢一面倒;回測多半續強,不是賣訊",
+    "w_rsi_overbought": "近14週漲勢一面倒;回測多半續強,不是賣訊",
+    "rsi_oversold": "近14日跌勢一面倒;回測多半續弱,不是買訊",
+    "w_rsi_oversold": "近14週跌勢一面倒;回測多半續弱,不是買訊",
+}
 NOISY_CODES = set(MA5_POS)  # shown on the board under their own filter; not counted as "觸發", not listed in Telegram
 
-SIGNAL_ORDER = (
-    WEEKLY_BULLISH + DAILY_BULLISH + WEEKLY_BEARISH + DAILY_BEARISH
-    + ["w_rsi_overbought", "rsi_overbought", "w_rsi_oversold", "rsi_oversold", "w_volume_spike", "volume_spike"]
-    + MA_POS_CODES
-)
+SIGNAL_ORDER = STRONG + WEAK + ["w_volume_spike", "volume_spike"] + CROSS + MA_POS_CODES
 
 SIGNAL_SECTION_TITLE = {
-    "wma_golden_cross": "週線黃金交叉",
-    "wma_death_cross": "週線死亡交叉",
-    "w_macd_golden_cross": "週MACD金叉",
-    "w_macd_death_cross": "週MACD死叉",
+    "wma_golden_cross": "週線黃金交叉(參考)",
+    "wma_death_cross": "週線死亡交叉(參考)",
+    "w_macd_golden_cross": "週MACD金叉(參考)",
+    "w_macd_death_cross": "週MACD死叉(參考)",
     "w_bb_breakout_upper": "週線突破布林上軌",
     "w_bb_breakout_lower": "週線跌破布林下軌",
     "w_new_high": "創60週新高",
     "w_new_low": "創60週新低",
-    "w_rsi_overbought": "週RSI超買(中期過熱)",
-    "w_rsi_oversold": "週RSI超賣(中期超跌)",
+    "w_rsi_overbought": "週RSI超買(近14週漲勢一面倒,回測多續強)",
+    "w_rsi_oversold": "週RSI超賣(近14週跌勢一面倒,回測多續弱)",
     "w_volume_spike": "週成交量異常放大",
-    "ma_golden_cross": "均線黃金交叉",
-    "macd_golden_cross": "MACD金叉",
+    "ma_golden_cross": "均線黃金交叉(參考)",
+    "macd_golden_cross": "MACD金叉(參考)",
     "bb_breakout_upper": "突破布林上軌",
     "new_high": "創60日新高",
-    "ma_death_cross": "均線死亡交叉",
-    "macd_death_cross": "MACD死叉",
+    "ma_death_cross": "均線死亡交叉(參考)",
+    "macd_death_cross": "MACD死叉(參考)",
     "bb_breakout_lower": "跌破布林下軌",
     "new_low": "創60日新低",
-    "rsi_overbought": "RSI超買(短線過熱)",
-    "rsi_oversold": "RSI超賣(短線超跌)",
+    "rsi_overbought": "RSI超買(近14日漲勢一面倒,回測多續強)",
+    "rsi_oversold": "RSI超賣(近14日跌勢一面倒,回測多續弱)",
     "volume_spike": "成交量異常放大",
     "close_above_ma20": "站上月線(20日)",
     "close_below_ma20": "跌破月線(20日)",
@@ -68,31 +86,30 @@ FILTER_CATEGORIES = {
 }
 
 ARTIFACT_CATEGORIES = {
-    "bull": {"label": "偏多", "codes": WEEKLY_BULLISH + DAILY_BULLISH, "varBg": "--rise-soft", "varText": "--rise"},
-    "bear": {"label": "偏空", "codes": WEEKLY_BEARISH + DAILY_BEARISH, "varBg": "--fall-soft", "varText": "--fall"},
-    "wbull": {"label": "週線偏多", "codes": WEEKLY_BULLISH, "varBg": "--rise-soft", "varText": "--rise"},
-    "wbear": {"label": "週線偏空", "codes": WEEKLY_BEARISH, "varBg": "--fall-soft", "varText": "--fall"},
-    "overbought": {"label": "RSI超買", "codes": ["rsi_overbought", "w_rsi_overbought"], "varBg": "--warn-soft", "varText": "--warn"},
-    "oversold": {"label": "RSI超賣", "codes": ["rsi_oversold", "w_rsi_oversold"], "varBg": "--info-soft", "varText": "--info"},
+    "strong": {"label": "強勢延續", "codes": STRONG, "varBg": "--rise-soft", "varText": "--rise"},
+    "weak": {"label": "弱勢延續", "codes": WEAK, "varBg": "--fall-soft", "varText": "--fall"},
+    "overbought": {"label": "RSI超買(漲勢一面倒)", "codes": ["rsi_overbought", "w_rsi_overbought"], "varBg": "--rise-soft", "varText": "--rise"},
+    "oversold": {"label": "RSI超賣(跌勢一面倒)", "codes": ["rsi_oversold", "w_rsi_oversold"], "varBg": "--fall-soft", "varText": "--fall"},
     "volume": {"label": "成交量異常", "codes": ["volume_spike", "w_volume_spike"], "varBg": "--vol-soft", "varText": "--vol"},
-    "ma20": {"label": "月線(20日)", "codes": MA20_POS, "varBg": "--accent-soft", "varText": "--accent"},
-    "ma5": {"label": "5日線", "codes": MA5_POS, "varBg": "--accent-soft", "varText": "--accent"},
+    "cross": {"label": "交叉(參考)", "codes": CROSS, "varBg": "--bg", "varText": "--ink-soft"},
+    "ma20": {"label": "月線(參考)", "codes": MA20_POS, "varBg": "--bg", "varText": "--ink-soft"},
+    "ma5": {"label": "5日線(參考)", "codes": MA5_POS, "varBg": "--bg", "varText": "--ink-soft"},
 }
 
 
 TREND_METRICS = [
     {"key": "all", "label": "觸發檔數", "series": [{"name": "觸發", "codes": [c for c in SIGNAL_ORDER if c not in MA_POS_CODES], "color": "--accent"}]},
-    {"key": "bs", "label": "偏多 vs 偏空", "series": [
-        {"name": "偏多", "codes": WEEKLY_BULLISH + DAILY_BULLISH, "color": "--rise"},
-        {"name": "偏空", "codes": WEEKLY_BEARISH + DAILY_BEARISH, "color": "--fall", "dash": "6 4"}]},
-    {"key": "rsi", "label": "RSI 超買 vs 超賣", "series": [
-        {"name": "超買", "codes": ["rsi_overbought", "w_rsi_overbought"], "color": "--warn"},
-        {"name": "超賣", "codes": ["rsi_oversold", "w_rsi_oversold"], "color": "--info", "dash": "6 4"}]},
-    {"key": "wk", "label": "週線偏多 vs 偏空", "weekly": True,
-     "note": "週線訊號只在週收盤判斷(遇週五休市則在下週第一個交易日),所以這張圖以週為單位。",
+    {"key": "bs", "label": "強勢 vs 弱勢", "series": [
+        {"name": "強勢延續", "codes": STRONG, "color": "--rise"},
+        {"name": "弱勢延續", "codes": WEAK, "color": "--fall", "dash": "6 4"}]},
+    {"key": "rsi", "label": "RSI 超買 vs 超賣", "note": "超買=近14日漲勢一面倒,超賣=跌勢一面倒。全市場超賣檔數暴增通常出現在急跌時。", "series": [
+        {"name": "超買(漲勢一面倒)", "codes": ["rsi_overbought", "w_rsi_overbought"], "color": "--rise"},
+        {"name": "超賣(跌勢一面倒)", "codes": ["rsi_oversold", "w_rsi_oversold"], "color": "--fall", "dash": "6 4"}]},
+    {"key": "wk", "label": "週線強勢 vs 弱勢", "weekly": True,
+     "note": "週線訊號只在週收盤判斷(遇週五休市則在下週第一個交易日),所以這張圖以週為單位。強勢=60週新高/週RSI超買/週線突破上軌,弱勢反之。",
      "series": [
-        {"name": "週偏多", "codes": WEEKLY_BULLISH, "color": "--rise"},
-        {"name": "週偏空", "codes": WEEKLY_BEARISH, "color": "--fall", "dash": "6 4"}]},
+        {"name": "週強勢", "codes": [c for c in STRONG if c.startswith("w_")], "color": "--rise"},
+        {"name": "週弱勢", "codes": [c for c in WEAK if c.startswith("w_")], "color": "--fall", "dash": "6 4"}]},
 ]
 
 
@@ -120,8 +137,8 @@ def build_market_narrative(alerts: list[dict], universe: list[dict], total_unive
     industry_map = {s["stock_id"]: s.get("industry", "其他") for s in universe}
     by_stock = _group_by_stock([a for a in alerts if a["signal"] not in NOISY_CODES])
 
-    bullish_ids = {a["stock_id"] for a in alerts if a["signal"] in BULLISH_SIGNALS}
-    bearish_ids = {a["stock_id"] for a in alerts if a["signal"] in BEARISH_SIGNALS}
+    bullish_ids = {a["stock_id"] for a in alerts if a["signal"] in STRONG_SET}
+    bearish_ids = {a["stock_id"] for a in alerts if a["signal"] in WEAK_SET}
     overbought_ids = {a["stock_id"] for a in alerts if a["signal"] == "rsi_overbought"}
     oversold_ids = {a["stock_id"] for a in alerts if a["signal"] == "rsi_oversold"}
     volume_ids = {a["stock_id"] for a in alerts if a["signal"] == "volume_spike"}
@@ -134,17 +151,17 @@ def build_market_narrative(alerts: list[dict], universe: list[dict], total_unive
 
     if bullish_ids:
         industries = "、".join(_top_industries(bullish_ids, industry_map))
-        lines.append(f"偏多訊號(創新高/黃金交叉/突破布林上軌)共{len(bullish_ids)}檔,以{industries}居多。")
+        lines.append(f"強勢延續訊號(創新高/RSI超買/突破布林上軌)共{len(bullish_ids)}檔,以{industries}居多。")
     if bearish_ids:
         industries = "、".join(_top_industries(bearish_ids, industry_map))
-        lines.append(f"偏空訊號(創新低/死亡交叉/跌破布林下軌)共{len(bearish_ids)}檔,以{industries}居多。")
+        lines.append(f"弱勢延續訊號(創新低/RSI超賣/跌破布林下軌)共{len(bearish_ids)}檔,以{industries}居多。")
 
     if len(bullish_ids) > len(bearish_ids) * 1.2:
-        lines.append("整體訊號偏多。")
+        lines.append("整體偏強。")
     elif len(bearish_ids) > len(bullish_ids) * 1.2:
-        lines.append("整體訊號偏空。")
+        lines.append("整體偏弱。")
     elif bullish_ids or bearish_ids:
-        lines.append("多空訊號互見,無明顯方向。")
+        lines.append("強弱互見,無明顯方向。")
 
     weekly_parts = []
     for code in [c for c in SIGNAL_ORDER if c in WEEKLY_CODES]:
@@ -157,6 +174,9 @@ def build_market_narrative(alerts: list[dict], universe: list[dict], total_unive
 
     if overbought_ids or oversold_ids:
         lines.append(f"RSI超買{len(overbought_ids)}檔、超賣{len(oversold_ids)}檔。")
+    share = len(oversold_ids) / total_universe if total_universe else 0
+    if share >= 0.2:
+        lines.append(f"全市場超賣比例{share:.0%},屬極端水準(歷史上≥30%之後常見反彈,但樣本很少)。")
 
     ma_counts = {c: len({a["stock_id"] for a in alerts if a["signal"] == c}) for c in MA_POS_CODES}
     if any(ma_counts.values()):
@@ -460,10 +480,7 @@ _ROW_HTML_ARTIFACT = (
 
 _CARD_HTML_FN_ARTIFACT = f"""
 function cardHtml(stock) {{
-  const badges = stock.signals.map(sig => {{
-    const style = sigStyle(sig.code);
-    return `<span class="badge" style="${{style}}">${{sig.detail}}</span>`;
-  }}).join('');
+  const badges = stock.signals.map(sigBadge).join('');
   const badgesHtml = badges ? `<div class="stock-card-badges">${{badges}}</div>` : '';
   const news = (stock.news || []).map(n => `<a href="${{n.link}}" target="_blank" rel="noopener">↗ ${{n.title}}</a>`).join('');
   const newsHtml = news ? `<div class="news">${{news}}</div>` : '';
@@ -502,8 +519,8 @@ WEEKLY_CROSS_CSS = """
 .wx-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .wx-chip { font-family: inherit; font-size: 12.5px; padding: 4px 9px; border-radius: 6px; border: 0; cursor: pointer; color: var(--paper); font-weight: 500; }
 .wx-chip .c { font-family: "IBM Plex Mono", monospace; opacity: .85; margin-right: 5px; }
-.wx-col.gold .wx-chip { background: var(--rise); }
-.wx-col.death .wx-chip { background: var(--fall); }
+.wx-col.gold .wx-chip { background: var(--paper); color: var(--rise); box-shadow: inset 0 0 0 1px var(--rise); }
+.wx-col.death .wx-chip { background: var(--paper); color: var(--fall); box-shadow: inset 0 0 0 1px var(--fall); }
 .wx-chip:hover { filter: brightness(1.08); }
 .wx-chip:focus-visible, .wx-prev summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .wx-none { font-size: 12.5px; color: var(--ink-faint); margin: 0; }
@@ -527,17 +544,22 @@ WEEKLY_CROSS_HTML = """
       <div class="wx-col death"><h3>死亡交叉 <b id="wx-d-n">0</b></h3><div id="wx-d" class="wx-chips"></div></div>
     </div>
     <details class="wx-prev"><summary>前幾週的週線交叉</summary><div id="wx-prev"></div></details>
-    <p class="wx-note">5週線與20週線交叉,只在週收盤判斷。下一次週收盤之前,這裡都保留最近一週的結果;點股票可查看指標與走勢。</p>
+    <p class="wx-note">5週線與20週線交叉,只在週收盤判斷。下一次週收盤之前,這裡都保留最近一週的結果;點股票可查看指標與走勢。<br>回測(2016–2026):週線死叉之後60個交易日平均只輸同期平均0.9%、且只在2021年後成立,金叉約0%。當作中期趨勢的參考,不是買賣訊號。</p>
   </section>
 """
 
 WEEKLY_CROSS_JS = """
-const WX_SOLID = { wma_golden_cross: "--rise", wma_death_cross: "--fall" };
-const MA_SOFT = { close_above_ma20: "rise", close_below_ma20: "fall", close_above_ma5: "rise", close_below_ma5: "fall" };
+// Badge look follows the backtest: strong/weak continuation in red/green, crossovers as neutral outlines.
 function sigStyle(code) {
-  if (WX_SOLID[code]) return `background:var(${WX_SOLID[code]});color:var(--paper);font-weight:600`;
-  if (MA_SOFT[code]) return `background:var(--${MA_SOFT[code]}-soft);color:var(--${MA_SOFT[code]})`;
-  return badgeStyle(codeCategory(code));
+  const cat = codeCategory(code);
+  if (cat === "cross" || cat === "ma20" || cat === "ma5")
+    return "background:transparent;color:var(--ink-soft);box-shadow:inset 0 0 0 1px var(--line-strong)";
+  return badgeStyle(cat);
+}
+function sigBadge(sig) {
+  const note = RSI_NOTE[sig.code];
+  if (!note) return `<span class="badge" style="${sigStyle(sig.code)}">${sig.detail}</span>`;
+  return `<span class="badge rsi" style="${sigStyle(sig.code)}" title="${note}">${sig.detail}<span class="bnote">${note}</span></span>`;
 }
 function renderWeeklyCross() {
   const sec = document.getElementById("wx");
@@ -644,6 +666,60 @@ document.getElementById("nav-home").addEventListener("click", navHome);
 """
 
 
+GUIDE_CSS = """
+.badge.rsi { white-space: normal; }
+.badge .bnote { font-family: "IBM Plex Sans", "PingFang TC", sans-serif; font-size: 11px; opacity: .8; margin-left: 6px; }
+.thermo { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; background: var(--paper); border: 1px solid var(--line);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+.thermo b { font-family: "IBM Plex Mono", monospace; font-size: 20px; font-weight: 500; color: var(--ink); }
+.thermo .lvl { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--ink-soft); }
+.thermo .lvl.hot { background: var(--fall-soft); color: var(--fall); }
+.thermo .lvl.extreme { background: var(--fall); color: var(--paper); }
+.thermo .t-note { flex-basis: 100%; font-size: 12px; color: var(--ink-faint); }
+.guide { margin: -4px 0 16px; font-size: 13px; color: var(--ink-soft); }
+.guide summary { cursor: pointer; width: fit-content; font-weight: 500; color: var(--accent); }
+.guide summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.guide-body { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-top: 8px; line-height: 1.7; }
+.guide-body dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; }
+.guide-body dt { font-weight: 600; color: var(--ink); }
+.guide-body dd { margin: 0; min-width: 0; }
+.guide-body p { margin: 10px 0 0; font-size: 12px; color: var(--ink-faint); }
+@media (max-width: 560px) { .guide-body dl { grid-template-columns: 1fr; } .guide-body dd { margin-bottom: 6px; } }
+"""
+
+GUIDE_HTML = f"""
+  <details class="guide">
+    <summary>訊號怎麼看(回測 {BACKTEST['period']})</summary>
+    <div class="guide-body">
+      <dl>
+        <dt style="color:var(--rise)">強勢延續</dt><dd>{BACKTEST['strong']}。強的股票傾向繼續強。</dd>
+        <dt style="color:var(--fall)">弱勢延續</dt><dd>{BACKTEST['weak']}。弱的股票傾向繼續弱;跟著大盤一起跌時創新低的訊號較弱,大盤在漲卻創新低的才是真警訊。</dd>
+        <dt>RSI超買</dt><dd>近14日的漲跌幅裡,上漲占了七成以上,也就是漲勢一面倒。名稱聽起來像「漲過頭該賣」,但回測顯示之後多半續強,不是賣訊。</dd>
+        <dt>RSI超賣</dt><dd>近14日的漲跌幅裡,下跌占了七成以上,也就是跌勢一面倒。名稱聽起來像「跌過頭該買」,但回測顯示之後多半續弱,不是買訊;同時創新低的更弱。</dd>
+        <dt style="color:var(--vol)">成交量異常</dt><dd>{BACKTEST['volume']}。</dd>
+        <dt>參考類</dt><dd>{BACKTEST['cross']}。保留給你掌握盤面,不建議當買賣依據。</dd>
+      </dl>
+      <p>回測方法:每個訊號觸發後的報酬,減掉同一天170檔的平均報酬,所以大盤漲跌不算訊號的功勞。限制:股票池是現在的成分股(挑了事後贏家,強勢訊號可能被高估)、用未還原股價。完整數字在 GitHub 的 backtest/results。</p>
+    </div>
+  </details>
+"""
+
+
+def _thermo_html(alerts: list[dict], total: int) -> str:
+    """Market-wide share of stocks on a daily RSI-oversold reading: a temperature gauge, not a signal."""
+    n = len({a["stock_id"] for a in alerts if a["signal"] == "rsi_oversold"})
+    share = n / total if total else 0
+    if share >= 0.3:
+        lvl, cls = "極端超賣", "extreme"
+    elif share >= 0.1:
+        lvl, cls = "偏高", "hot"
+    else:
+        lvl, cls = "正常", ""
+    return (f'  <div class="thermo"><span>市場溫度計 · 全市場RSI超賣比例</span><b>{share:.0%}</b>'
+            f'<span>({n}/{total}檔)</span><span class="lvl {cls}">{lvl}</span>'
+            f'<span class="t-note">{BACKTEST["thermo"]}。</span></div>')
+
+
 def build_artifact_html(run_date: str, alerts: list[dict], universe: list[dict], news_map: dict | None = None,
                          snapshots: list[dict] | None = None, history: dict | None = None,
                          series: dict | None = None) -> str:
@@ -745,6 +821,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 {trend_ui.TREND_CSS}
 {WEEKLY_CROSS_CSS}
 {NAV_CSS}
+{GUIDE_CSS}
 </style>
 
 <div class="wrap">
@@ -758,9 +835,10 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
   <div class="stats">
     <div class="stat"><p class="label">監測檔數</p><p class="value">{len(universe)}</p></div>
     <div class="stat"><p class="label">觸發訊號</p><p class="value">{triggered_count}</p></div>
-    <div class="stat"><p class="label">偏多</p><p class="value rise">{len({a["stock_id"] for a in alerts if a["signal"] in BULLISH_SIGNALS})}</p></div>
-    <div class="stat"><p class="label">偏空</p><p class="value fall">{len({a["stock_id"] for a in alerts if a["signal"] in BEARISH_SIGNALS})}</p></div>
+    <div class="stat"><p class="label">強勢延續</p><p class="value rise">{len({a["stock_id"] for a in alerts if a["signal"] in STRONG_SET})}</p></div>
+    <div class="stat"><p class="label">弱勢延續</p><p class="value fall">{len({a["stock_id"] for a in alerts if a["signal"] in WEAK_SET})}</p></div>
   </div>
+{_thermo_html(alerts, len(universe))}
 {WEEKLY_CROSS_HTML}
 {trend_ui.TREND_HTML}
   <div class="search">
@@ -769,6 +847,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
   </div>
 
   <div id="filters" class="filters"></div>
+{GUIDE_HTML}
   <div id="table-wrap" class="table-wrap">
     <table>
       <thead><tr><th>代號</th><th>名稱</th><th>產業</th><th>觸發訊號</th></tr></thead>
@@ -778,12 +857,10 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
   <div id="cards" class="cards" style="display:none"></div>
   <p id="empty-msg"></p>
   <div class="legend">
-    <span><i class="dot" style="background:var(--rise)"></i>偏多(新高/黃金交叉/MACD金叉/突破上軌,日線與週線)</span>
-    <span><i class="dot" style="background:var(--fall)"></i>偏空(新低/死亡交叉/MACD死叉/跌破下軌,日線與週線)</span>
-    <span><i class="dot" style="background:var(--warn)"></i>RSI超買</span>
-    <span><i class="dot" style="background:var(--info)"></i>RSI超賣</span>
+    <span><i class="dot" style="background:var(--rise)"></i>強勢延續:創新高/RSI超買/突破布林上軌(日線與週線)</span>
+    <span><i class="dot" style="background:var(--fall)"></i>弱勢延續:創新低/RSI超賣/跌破布林下軌(日線與週線)</span>
     <span><i class="dot" style="background:var(--vol)"></i>成交量異常</span>
-    <span><i class="dot" style="background:var(--accent)"></i>收盤站上/跌破5日線、月線(紅=站上、綠=跌破;5日線另列,不計入觸發檔數)</span>
+    <span><i class="dot" style="background:var(--line-strong)"></i>參考:均線/MACD/週線交叉、站上/跌破5日線與月線(回測預測力接近0;5日線不計入觸發檔數)</span>
   </div>
   <footer>資料來源:FinMind · 指標:MA交叉/收盤穿越5日線與月線/RSI/MACD/布林通道/成交量/新高新低,日線與週線各算一套(週線用5週vs20週、60週新高低,只在週收盤判斷;卡片上週線數值為含本週的暫時值),任一觸發即列入 · 搜尋可查全部{len(universe)}檔目前數值 · 僅供個人參考,非投資建議</footer>
 </div>
@@ -798,6 +875,7 @@ const TREND_METRICS = {json.dumps(TREND_METRICS, ensure_ascii=False)};
 const BULL_CODES = {json.dumps(sorted(BULLISH_SIGNALS))};
 const BEAR_CODES = {json.dumps(sorted(BEARISH_SIGNALS))};
 const NOISY = new Set({json.dumps(sorted(NOISY_CODES))});
+const RSI_NOTE = {json.dumps(RSI_NOTE, ensure_ascii=False)};
 const isCore = s => s.signals.some(g => !NOISY.has(g.code));
 {trend_ui.TREND_JS}
 {_SEARCH_SCRIPT}
@@ -869,7 +947,7 @@ function render() {{
   const rows = document.getElementById("rows"); rows.innerHTML = "";
   visible.forEach(stock => {{
     const tr = document.createElement("tr");
-    const badges = stock.signals.map(sig => `<span class="badge" style="${{sigStyle(sig.code)}}">${{sig.detail}}</span>`).join("");
+    const badges = stock.signals.map(sigBadge).join("");
     const news = (stock.news || []).map(n => `<a href="${{n.link}}" target="_blank" rel="noopener">↗ ${{n.title}}</a>`).join("");
     const newsHtml = news ? `<div class="news">${{news}}</div>` : "";
     tr.innerHTML = `{_ROW_HTML_ARTIFACT}`;
