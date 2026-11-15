@@ -134,62 +134,63 @@ def _top_industries(stock_ids: set, industry_map: dict, top_n: int = 2) -> list[
 
 
 def build_market_narrative(alerts: list[dict], universe: list[dict], total_universe: int) -> str:
+    """Short daily summary (board + Telegram). Details live in the lists and filters, not here."""
     industry_map = {s["stock_id"]: s.get("industry", "其他") for s in universe}
     by_stock = _group_by_stock([a for a in alerts if a["signal"] not in NOISY_CODES])
-
-    bullish_ids = {a["stock_id"] for a in alerts if a["signal"] in STRONG_SET}
-    bearish_ids = {a["stock_id"] for a in alerts if a["signal"] in WEAK_SET}
-    overbought_ids = {a["stock_id"] for a in alerts if a["signal"] == "rsi_overbought"}
-    oversold_ids = {a["stock_id"] for a in alerts if a["signal"] == "rsi_oversold"}
-    volume_ids = {a["stock_id"] for a in alerts if a["signal"] == "volume_spike"}
-
     if not by_stock:
-        return f"今日監測{total_universe}檔,無任何個股觸發技術訊號,市場訊號平靜。"
+        return f"{total_universe}檔中沒有個股觸發訊號。"
 
-    pct = len(by_stock) / total_universe * 100
-    lines = [f"今日監測{total_universe}檔,共{len(by_stock)}檔觸發技術訊號(占比{pct:.0f}%)。"]
+    ids = lambda codes: {a["stock_id"] for a in alerts if a["signal"] in codes}  # noqa: E731
+    strong, weak = ids(STRONG_SET), ids(WEAK_SET)
 
-    if bullish_ids:
-        industries = "、".join(_top_industries(bullish_ids, industry_map))
-        lines.append(f"強勢延續訊號(創新高/RSI超買/突破布林上軌)共{len(bullish_ids)}檔,以{industries}居多。")
-    if bearish_ids:
-        industries = "、".join(_top_industries(bearish_ids, industry_map))
-        lines.append(f"弱勢延續訊號(創新低/RSI超賣/跌破布林下軌)共{len(bearish_ids)}檔,以{industries}居多。")
+    def top_ind(group: set) -> str:
+        top = _top_industries(group, industry_map)
+        return f"({top[0].split('(')[0]}居多)" if top else ""
 
-    if len(bullish_ids) > len(bearish_ids) * 1.2:
-        lines.append("整體偏強。")
-    elif len(bearish_ids) > len(bullish_ids) * 1.2:
-        lines.append("整體偏弱。")
-    elif bullish_ids or bearish_ids:
-        lines.append("強弱互見,無明顯方向。")
+    def names(group: set, n: int = 3) -> str:
+        order = []
+        for a in alerts:  # alerts follow the universe order (largest first)
+            if a["stock_id"] in group and a["stock_name"] not in order:
+                order.append(a["stock_name"])
+        return "、".join(order[:n]) + ("等" if len(order) > n else "")
 
-    weekly_parts = []
-    for code in [c for c in SIGNAL_ORDER if c in WEEKLY_CODES]:
-        items = [a for a in alerts if a["signal"] == code]
-        if items:
-            names = "、".join(a["stock_name"] for a in items[:5]) + ("等" if len(items) > 5 else "")
-            weekly_parts.append(f"{SIGNAL_SECTION_TITLE[code]}{len(items)}檔({names})")
-    if weekly_parts:
-        lines.append("週線(週收盤判斷)出現" + "、".join(weekly_parts) + "。")
+    if len(strong) > len(weak) * 1.2:
+        tone = "整體偏強"
+    elif len(weak) > len(strong) * 1.2:
+        tone = "整體偏弱"
+    else:
+        tone = "強弱互見"
+    lines = [f"{total_universe}檔中{len(by_stock)}檔觸發訊號。"
+             f"強勢延續{len(strong)}檔{top_ind(strong)}、弱勢延續{len(weak)}檔{top_ind(weak)},{tone}。"]
 
-    if overbought_ids or oversold_ids:
-        lines.append(f"RSI超買{len(overbought_ids)}檔、超賣{len(oversold_ids)}檔。")
-    share = len(oversold_ids) / total_universe if total_universe else 0
+    w_strong = ids({c for c in STRONG if c.startswith("w_")})
+    w_weak = ids({c for c in WEAK if c.startswith("w_")})
+    w_cross = ids({"wma_golden_cross", "wma_death_cross"})
+    if w_strong or w_weak or w_cross:
+        parts = []
+        if w_strong:
+            parts.append(f"強勢{len(w_strong)}檔({names(w_strong)})")
+        if w_weak:
+            parts.append(f"弱勢{len(w_weak)}檔({names(w_weak)})")
+        tail = ";週線交叉見上方區塊" if w_cross else ""
+        lines.append("週線:" + "、".join(parts) + tail + "。")
+
+    ob, os_ = ids({"rsi_overbought"}), ids({"rsi_oversold"})
+    extra = []
+    if ob or os_:
+        extra.append(f"RSI超買{len(ob)}檔、超賣{len(os_)}檔")
+    above, below = ids({"close_above_ma20"}), ids({"close_below_ma20"})
+    if above or below:
+        extra.append(f"站上月線{len(above)}檔、跌破{len(below)}檔")
+    vol = ids({"volume_spike"})
+    if vol:
+        extra.append(f"量增{len(vol)}檔")
+    if extra:
+        lines.append("、".join(extra) + "。")
+    share = len(os_) / total_universe if total_universe else 0
     if share >= 0.2:
-        lines.append(f"全市場超賣比例{share:.0%},屬極端水準(歷史上≥30%之後常見反彈,但樣本很少)。")
-
-    ma_counts = {c: len({a["stock_id"] for a in alerts if a["signal"] == c}) for c in MA_POS_CODES}
-    if any(ma_counts.values()):
-        lines.append(
-            f"收盤站上月線{ma_counts['close_above_ma20']}檔、跌破月線{ma_counts['close_below_ma20']}檔;"
-            f"站上5日線{ma_counts['close_above_ma5']}檔、跌破5日線{ma_counts['close_below_ma5']}檔。"
-        )
-    if volume_ids:
-        industries = "、".join(_top_industries(volume_ids, industry_map))
-        lines.append(f"成交量異常放大共{len(volume_ids)}檔,以{industries}居多,值得留意資金是否轉向。")
-
-    return " ".join(lines)
-
+        lines.append(f"全市場超賣比例{share:.0%},屬極端水準(歷史上≥30%後常見反彈,樣本少)。")
+    return "".join(lines)
 
 def write_csv_report(report_dir: str, run_date: str, alerts: list[dict]) -> str:
     Path(report_dir).mkdir(parents=True, exist_ok=True)
