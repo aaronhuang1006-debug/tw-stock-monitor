@@ -46,7 +46,7 @@ notify:
     chat_id: ""     # 由環境變數 TELEGRAM_CHAT_ID 覆寫
 
 news:
-  enabled: true
+  enabled: false   # 關閉:每檔觸發股都要多一次 FinMind 請求,拖慢每日計算
   max_per_stock: 3
 
 pages_url: "https://aaronhuang1006-debug.github.io/tw-stock-monitor/"
