@@ -5,6 +5,9 @@ on:
     # Several triggers on off-peak minutes (GitHub delays :00/:30 schedules the most; runs triggered
     # at 17:30 Taipei were starting after 01:00). The first run that finds the day's data publishes;
     # the rest see it already published and stop in seconds.
+    - cron: "43 6 * * 1-5"    # 14:43 Asia/Taipei (data may not be out yet; then it just skips)
+    - cron: "17 7 * * 1-5"    # 15:17
+    - cron: "47 7 * * 1-5"    # 15:47
     - cron: "47 8 * * 1-5"    # 16:47 Asia/Taipei
     - cron: "23 10 * * 1-5"   # 18:23
     - cron: "37 11 * * 1-5"   # 19:37
