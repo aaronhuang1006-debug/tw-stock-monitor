@@ -2,8 +2,14 @@ name: Daily TW stock scan
 
 on:
   schedule:
-    - cron: "0 15 * * 1-5"   # 15:00 UTC = 23:00 Asia/Taipei, Mon-Fri (the intended run time)
-    - cron: "30 9 * * 1-5"   # 09:30 UTC = 17:30 Asia/Taipei — early trigger: GitHub has been starting runs ~6h late, so this one lands near 23:00
+    # Several triggers on off-peak minutes (GitHub delays :00/:30 schedules the most; runs triggered
+    # at 17:30 Taipei were starting after 01:00). The first run that finds the day's data publishes;
+    # the rest see it already published and stop in seconds.
+    - cron: "47 8 * * 1-5"    # 16:47 Asia/Taipei
+    - cron: "23 10 * * 1-5"   # 18:23
+    - cron: "37 11 * * 1-5"   # 19:37
+    - cron: "13 13 * * 1-5"   # 21:13
+    - cron: "41 15 * * 1-5"   # 23:41 (fallback)
   workflow_dispatch:
     inputs:
       notify:
@@ -18,6 +24,12 @@ on:
 
 permissions:
   contents: write
+
+# One scan at a time: a run that waited in the queue checks out after the previous one pushed,
+# sees the day already published, and skips (no double Telegram message).
+concurrency:
+  group: daily-scan
+  cancel-in-progress: false
 
 jobs:
   scan:
