@@ -189,7 +189,8 @@ def build_market_narrative(alerts: list[dict], universe: list[dict], total_unive
         lines.append("、".join(extra) + "。")
     share = len(os_) / total_universe if total_universe else 0
     if share >= 0.2:
-        lines.append(f"全市場超賣比例{share:.0%},屬極端水準(歷史上≥30%後常見反彈,樣本少)。")
+        level = "極端" if share >= 0.3 else "偏高"
+        lines.append(f"全市場超賣比例{share:.0%},{level}(歷史上≥30%後常見反彈,樣本少)。")
     return "".join(lines)
 
 def write_csv_report(report_dir: str, run_date: str, alerts: list[dict]) -> str:
