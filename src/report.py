@@ -140,8 +140,9 @@ def _group_by_stock(alerts: list[dict]) -> dict:
 
 
 def _top_industries(stock_ids: set, industry_map: dict, top_n: int = 2) -> list[str]:
-    counter = Counter(industry_map.get(sid, "其他") for sid in stock_ids)
-    return [f"{name}({cnt}檔)" for name, cnt in counter.most_common(top_n)]
+    counter = Counter(industry_map.get(sid, "其他") for sid in sorted(stock_ids))
+    ranked = sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))  # ties by name, so reruns agree
+    return [f"{name}({cnt}檔)" for name, cnt in ranked[:top_n]]
 
 
 def build_market_narrative(alerts: list[dict], universe: list[dict], total_universe: int) -> str:
@@ -490,7 +491,7 @@ render();
 
 _ROW_HTML_ARTIFACT = (
     '<td class="code">${stock.stock_id}</td>'
-    '<td class="name">${stock.name}</td>'
+    '<td class="name">${stock.name}${mineTags(stock.stock_id)}</td>'
     '<td class="industry">${stock.industry}</td>'
     '<td>${badges}${newsHtml}</td>'
 )
@@ -505,7 +506,7 @@ function cardHtml(stock) {{
     `<div class="mini-stat"><p class="label">${{label}}</p><p class="value">${{fmt(stock[key], suffix)}}</p></div>`
   ).join('');
   return `<div class="stock-card">
-    <div class="stock-card-head"><span class="code">${{stock.stock_id}}</span><span class="name">${{stock.name}}</span><span class="industry">${{stock.industry}}</span></div>
+    <div class="stock-card-head"><span class="code">${{stock.stock_id}}</span><span class="name">${{stock.name}}</span><span class="industry">${{stock.industry}}</span>${{listToggles(stock.stock_id)}}</div>
     ${{badgesHtml}}
     <div class="mini-grid">${{grid}}</div>
     ${{newsHtml}}
@@ -757,6 +758,85 @@ def _thermo_html(alerts: list[dict], total: int) -> str:
             f'<span class="t-note">{BACKTEST["thermo"]}。</span></div>')
 
 
+# ---- 我的持股 / 我的關注 (artifact / Pages only) ----
+# Kept in the artifact's db (doc lists/main, owner-only) so it follows the owner across devices and
+# never lands in this public repo. Where db is unavailable (GitHub Pages, signed out) it falls back
+# to this browser's localStorage.
+LISTS_CSS = """
+.list-btns { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.list-btn { font-family: inherit; font-size: 12.5px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line-strong);
+  background: var(--paper); color: var(--ink-soft); cursor: pointer; }
+.list-btn:hover { border-color: var(--accent); }
+.list-btn.on { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.list-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.filters button.mine { border-style: dashed; }
+.filters button.mine.active { border-style: solid; }
+.tag-mine { display: inline-block; font-size: 10.5px; padding: 1px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 1px;
+  background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.no-sig { color: var(--ink-faint); font-size: 12.5px; }
+.list-note { font-size: 12.5px; color: var(--ink-faint); margin: -6px 0 14px; }
+.list-note[hidden] { display: none; }
+"""
+
+LISTS_JS = """
+const LISTS = { hold: [], watch: [] };
+const LIST_LABEL = { hold: "我的持股", watch: "我的關注" };
+let listRef = null, listMode = "local";
+function listsFromLocal() {
+  try { const v = JSON.parse(localStorage.getItem("tw-signal-lists") || "{}"); LISTS.hold = v.hold || []; LISTS.watch = v.watch || []; } catch (e) {}
+}
+function saveLists() {
+  const body = { hold: LISTS.hold.slice(), watch: LISTS.watch.slice() };
+  if (listRef) { listRef.set(body).catch(() => { listMode = "error"; render(); }); return; }
+  try { localStorage.setItem("tw-signal-lists", JSON.stringify(body)); } catch (e) {}
+}
+function inList(key, sid) { return LISTS[key].includes(sid); }
+function toggleList(key, sid) {
+  LISTS[key] = inList(key, sid) ? LISTS[key].filter(x => x !== sid) : LISTS[key].concat([sid]);
+  saveLists(); render();
+}
+function listToggles(sid) {
+  return '<span class="list-btns">' + ["hold", "watch"].map(k =>
+    `<button type="button" class="list-btn${inList(k, sid) ? " on" : ""}" data-list="${k}" data-sid="${sid}">${inList(k, sid) ? "✓ " : "+ "}${LIST_LABEL[k]}</button>`
+  ).join("") + "</span>";
+}
+function mineTags(sid) {
+  return (inList("hold", sid) ? '<span class="tag-mine">持股</span>' : "") + (inList("watch", sid) ? '<span class="tag-mine">關注</span>' : "");
+}
+function listNote() {
+  const el = document.getElementById("list-note");
+  const showing = !searchQuery.trim() && (activeFilter === "hold" || activeFilter === "watch");
+  el.hidden = !showing;
+  if (!showing) return;
+  const where = listMode === "db" ? "清單存在你的帳號,換裝置也看得到。"
+              : listMode === "error" ? "清單沒有存成功,請重新整理再試一次。"
+              : "清單只存在這個瀏覽器。";
+  el.textContent = `搜尋股票,在個股頁按「+ 我的持股」或「+ 我的關注」就能加入或移除。${where}`;
+}
+document.getElementById("cards").addEventListener("click", (e) => {
+  const b = e.target.closest(".list-btn"); if (b) toggleList(b.dataset.list, b.dataset.sid);
+});
+listsFromLocal();
+(async () => {
+  const db = window.claude && window.claude.use ? await window.claude.use("db").catch(() => null) : null;
+  if (!db) return;
+  const ref = db.doc("lists/main");
+  let first = true;
+  const timer = setTimeout(() => { if (first) { listMode = "local"; render(); } }, 10000);
+  ref.onSnapshot(snap => {
+    clearTimeout(timer);
+    const v = snap.exists ? (snap.data() || {}) : {};
+    if (first && !snap.exists && (LISTS.hold.length || LISTS.watch.length)) {
+      listRef = ref; listMode = "db"; first = false; saveLists(); render(); return;  // carry this browser's list over once
+    }
+    first = false; listRef = ref; listMode = "db";
+    LISTS.hold = Array.isArray(v.hold) ? v.hold : []; LISTS.watch = Array.isArray(v.watch) ? v.watch : [];
+    render();
+  }, () => { clearTimeout(timer); listRef = null; listMode = "local"; render(); });
+})();
+"""
+
+
 def build_artifact_html(run_date: str, alerts: list[dict], universe: list[dict], news_map: dict | None = None,
                          snapshots: list[dict] | None = None, history: dict | None = None,
                          series: dict | None = None) -> str:
@@ -859,6 +939,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 {WEEKLY_CROSS_CSS}
 {NAV_CSS}
 {GUIDE_CSS}
+{LISTS_CSS}
 </style>
 
 <div class="wrap">
@@ -884,6 +965,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
   </div>
 
   <div id="filters" class="filters"></div>
+  <p id="list-note" class="list-note" hidden></p>
 {GUIDE_HTML}
   <div id="table-wrap" class="table-wrap">
     <table>
@@ -936,11 +1018,12 @@ function renderFilters() {{
   const counts = {{ all: STOCKS.filter(isCore).length }};
   Object.keys(CATS).forEach(k => {{ counts[k] = triggered.filter(a => stockCats(a).has(k)).length; }});
   el.innerHTML = "";
-  const items = [["all", "全部"]].concat(Object.keys(CATS).map(k => [k, CATS[k].label]));
+  counts.hold = LISTS.hold.length; counts.watch = LISTS.watch.length;
+  const items = [["all", "全部"], ["hold", "我的持股"], ["watch", "我的關注"]].concat(Object.keys(CATS).map(k => [k, CATS[k].label]));
   items.forEach(([key, label]) => {{
     const btn = document.createElement("button"); btn.type = "button";
     btn.textContent = `${{label}} (${{counts[key]}})`;
-    btn.className = key === activeFilter ? "active" : "";
+    btn.className = (key === activeFilter ? "active" : "") + (key === "hold" || key === "watch" ? " mine" : "");
     btn.addEventListener("click", () => {{ navTo({{ q: "", f: key }}); }});
     el.appendChild(btn);
   }});
@@ -951,6 +1034,7 @@ function getVisible() {{
     const exact = STOCKS.filter(s => s.stock_id === searchQuery.trim());
     return exact.length ? exact : STOCKS.filter(s => matchesSearch(s, searchQuery));
   }}
+  if (activeFilter === "hold" || activeFilter === "watch") return STOCKS.filter(s => inList(activeFilter, s.stock_id));
   const triggered = STOCKS.filter(s => s.signals.length > 0);
   return activeFilter === "all" ? STOCKS.filter(isCore) : triggered.filter(s => stockCats(s).has(activeFilter));
 }}
@@ -962,6 +1046,7 @@ function render() {{
   document.getElementById("trend").hidden = searching;
   document.getElementById("wx").hidden = searching || document.getElementById("wx").dataset.empty === "1";
   renderNav();
+  listNote();
   const emptyMsg = document.getElementById("empty-msg");
   const tableWrap = document.getElementById("table-wrap");
   const cardsWrap = document.getElementById("cards");
@@ -970,6 +1055,7 @@ function render() {{
     emptyMsg.style.display = "block";
     emptyMsg.textContent = searching
       ? `查無「${{searchQuery}}」相關股票(僅收錄台灣50+中型100共{len(universe)}檔)`
+      : (activeFilter === "hold" || activeFilter === "watch") ? `${{LIST_LABEL[activeFilter]}}還是空的。`
       : "今日無觸發訊號。";
   }} else {{
     emptyMsg.style.display = "none";
@@ -986,7 +1072,7 @@ function render() {{
   const rows = document.getElementById("rows"); rows.innerHTML = "";
   visible.forEach(stock => {{
     const tr = document.createElement("tr");
-    const badges = stock.signals.map(sigBadge).join("");
+    const badges = stock.signals.map(sigBadge).join("") || '<span class="no-sig">今日無訊號</span>';
     const news = (stock.news || []).map(n => `<a href="${{n.link}}" target="_blank" rel="noopener">↗ ${{n.title}}</a>`).join("");
     const newsHtml = news ? `<div class="news">${{news}}</div>` : "";
     tr.innerHTML = `{_ROW_HTML_ARTIFACT}`;
@@ -1004,6 +1090,7 @@ document.getElementById("search-input").addEventListener("input", (e) => {{
 }});
 document.getElementById("search-clear").addEventListener("click", () => {{ navTo({{ q: "", f: activeFilter }}); }});
 {NAV_JS}
+{LISTS_JS}
 renderTrend();
 renderWeeklyCross();
 render();
