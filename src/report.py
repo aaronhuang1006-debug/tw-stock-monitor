@@ -588,18 +588,21 @@ function renderWeeklyCross() {
       const b = document.createElement("button"); b.type = "button"; b.className = "wx-chip";
       b.innerHTML = `<span class="c">${sid}</span>${names[sid] || ""}`;
       b.addEventListener("click", () => {
-        navTo({ q: sid, f: "all" }, true);
+        openStock(sid);
       });
       el.appendChild(b);
     });
   };
   fill("wx-g", pick(last, gi));
   fill("wx-d", pick(last, di));
-  const nm = list => list.length ? list.map(id => names[id] || id).join("、") : "—";
+  const nm = list => list.length ? list.map(id => `<button type="button" class="wx-link" data-sid="${id}">${names[id] || id}</button>`).join("、") : "—";
   const prev = weekDays.slice(0, -1).slice(-6).reverse();
   document.getElementById("wx-prev").innerHTML = prev.length ? prev.map(d =>
     `<div class="wx-prev-row"><span class="d">${md(d.d)}</span><div><span class="g">金叉 ${pick(d, gi).length}:</span>${nm(pick(d, gi))}<br><span class="x">死叉 ${pick(d, di).length}:</span>${nm(pick(d, di))}</div></div>`
   ).join("") : '<p class="wx-none">還沒有更早的紀錄</p>';
+  document.getElementById("wx-prev").onclick = (e) => {
+    const b = e.target.closest(".wx-link"); if (b) openStock(b.dataset.sid);
+  };
 }
 """
 
@@ -616,6 +619,13 @@ NAV_CSS = """
 .navbar button:hover:not(:disabled) { border-color: var(--accent); }
 .navbar button:disabled { opacity: .45; cursor: default; }
 .navbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row-link { cursor: pointer; }
+.row-link:hover td.name, .row-link:focus-visible td.name { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.row-link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.th-hint { font-weight: 400; color: var(--ink-faint); margin-left: 8px; letter-spacing: 0; }
+.wx-link { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+.wx-link:hover { color: var(--accent); }
+.wx-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .navbar .where { margin-left: auto; font-size: 12.5px; color: var(--ink-soft); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 """
 
@@ -642,6 +652,9 @@ function navTo(next, toTop) {
   if (cur.q === next.q && cur.f === next.f) return;
   NAV_STACK.push(cur);
   navApply({ q: next.q, f: next.f }, toTop ? "top" : undefined);
+}
+function openStock(sid) {
+  navTo({ q: sid, f: activeFilter }, true);
 }
 function navBack() {
   if (!NAV_STACK.length) return;
@@ -852,7 +865,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 {GUIDE_HTML}
   <div id="table-wrap" class="table-wrap">
     <table>
-      <thead><tr><th>代號</th><th>名稱</th><th>產業</th><th>觸發訊號</th></tr></thead>
+      <thead><tr><th>代號</th><th>名稱</th><th>產業</th><th>觸發訊號 <span class="th-hint">點任一列看個股</span></th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
   </div>
@@ -912,7 +925,8 @@ function renderFilters() {{
 
 function getVisible() {{
   if (searchQuery.trim()) {{
-    return STOCKS.filter(s => matchesSearch(s, searchQuery));
+    const exact = STOCKS.filter(s => s.stock_id === searchQuery.trim());
+    return exact.length ? exact : STOCKS.filter(s => matchesSearch(s, searchQuery));
   }}
   const triggered = STOCKS.filter(s => s.signals.length > 0);
   return activeFilter === "all" ? STOCKS.filter(isCore) : triggered.filter(s => stockCats(s).has(activeFilter));
@@ -953,6 +967,10 @@ function render() {{
     const news = (stock.news || []).map(n => `<a href="${{n.link}}" target="_blank" rel="noopener">↗ ${{n.title}}</a>`).join("");
     const newsHtml = news ? `<div class="news">${{news}}</div>` : "";
     tr.innerHTML = `{_ROW_HTML_ARTIFACT}`;
+    tr.className = "row-link"; tr.tabIndex = 0;
+    tr.title = `看 ${{stock.name}} 的指標與走勢`;
+    tr.addEventListener("click", (e) => {{ if (!e.target.closest("a")) openStock(stock.stock_id); }});
+    tr.addEventListener("keydown", (e) => {{ if (e.key === "Enter") openStock(stock.stock_id); }});
     rows.appendChild(tr);
   }});
 }}

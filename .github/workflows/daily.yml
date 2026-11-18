@@ -19,6 +19,10 @@ on:
         description: "Send the Telegram message (turn off when re-running a day only to rebuild data/history)"
         type: boolean
         default: true
+      force:
+        description: "Re-run even if today's report is already published (sends Telegram again unless notify is off)"
+        type: boolean
+        default: false
 
 # GitHub starts scheduled runs hours late (observed: ~6h, i.e. after midnight Taipei time).
 # src/main.py therefore never trusts the wall-clock date: it resolves the latest trading day
@@ -65,7 +69,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python -m src.main ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }} ${{ (github.event_name == 'workflow_dispatch' && inputs.notify == false) && '--no-notify' || '' }}
+        run: python -m src.main ${{ (github.event_name == 'workflow_dispatch' && inputs.force == true) && '--force' || '' }} ${{ (github.event_name == 'workflow_dispatch' && inputs.notify == false) && '--no-notify' || '' }}
 
       - name: Publish to GitHub Pages (docs/)
         run: |
