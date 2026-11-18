@@ -43,6 +43,7 @@ DAILY_CODES = [
     "bb_breakout_upper", "bb_breakout_lower", "new_high", "new_low",
     "rsi_overbought", "rsi_oversold", "volume_spike",
     "close_above_ma20", "close_below_ma20", "close_above_ma5", "close_below_ma5",
+    "bias_pos_35", "bias_pos_25", "bias_pos_15", "bias_neg_35", "bias_neg_25", "bias_neg_15",
 ]
 WEEKLY_CODES = ["wma_golden_cross", "wma_death_cross", "w_rsi_overbought", "w_rsi_oversold",
                 "w_macd_golden_cross", "w_macd_death_cross", "w_new_high", "w_new_low"]
@@ -155,6 +156,16 @@ def daily_signals(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
         a = ok & (y["close"] <= y[c]) & (t["close"] > t[c])
         out[f"close_above_ma{p}"] = a
         out[f"close_below_ma{p}"] = ok & ~a & (y["close"] >= y[c]) & (t["close"] < t[c])
+    ma = t["ma20"]
+    dev = (t["close"] / ma.where(ma > 0) - 1)
+    ok = t["close"].notna() & dev.notna()
+    hit = pd.Series(False, index=df.index)
+    for tier in screener.BIAS_TIERS:  # highest tier first, same as screener._ma20_bias
+        pos = ok & ~hit & (dev >= tier / 100)
+        neg = ok & ~hit & ~pos & (dev <= -tier / 100)
+        out[f"bias_pos_{tier}"] = pos
+        out[f"bias_neg_{tier}"] = neg
+        hit = hit | pos | neg
     out.iloc[0] = False
     return out.fillna(False).astype(bool)
 

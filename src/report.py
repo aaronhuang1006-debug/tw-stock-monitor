@@ -15,6 +15,9 @@ WEEKLY_CODES = WEEKLY_BULLISH + WEEKLY_BEARISH + ["w_rsi_overbought", "w_rsi_ove
 MA5_POS = ["close_above_ma5", "close_below_ma5"]
 MA20_POS = ["close_above_ma20", "close_below_ma20"]
 MA_POS_CODES = MA20_POS + MA5_POS
+BIAS_POS = ["bias_pos_35", "bias_pos_25", "bias_pos_15"]
+BIAS_NEG = ["bias_neg_35", "bias_neg_25", "bias_neg_15"]
+BIAS_CODES = BIAS_POS + BIAS_NEG
 # Groups from the 2016-2026 backtest (backtest/results): 60-day excess return vs the universe average.
 # New highs / RSI overbought / upper-band breaks kept outperforming; new lows / RSI oversold / lower-band
 # breaks kept underperforming; every crossover (MA, MACD, weekly MA, close vs 5/20-day line) was ~noise.
@@ -39,7 +42,7 @@ RSI_NOTE = {
 }
 NOISY_CODES = set(MA5_POS)  # shown on the board under their own filter; not counted as "觸發", not listed in Telegram
 
-SIGNAL_ORDER = STRONG + WEAK + ["w_volume_spike", "volume_spike"] + CROSS + MA_POS_CODES
+SIGNAL_ORDER = STRONG + WEAK + ["w_volume_spike", "volume_spike"] + BIAS_CODES + CROSS + MA_POS_CODES
 
 SIGNAL_SECTION_TITLE = {
     "wma_golden_cross": "週線黃金交叉(參考)",
@@ -68,6 +71,12 @@ SIGNAL_SECTION_TITLE = {
     "close_below_ma20": "跌破月線(20日)",
     "close_above_ma5": "站上5日線",
     "close_below_ma5": "跌破5日線",
+    "bias_pos_35": "月線正乖離≥35%",
+    "bias_pos_25": "月線正乖離25~35%",
+    "bias_pos_15": "月線正乖離15~25%",
+    "bias_neg_35": "月線負乖離≥35%",
+    "bias_neg_25": "月線負乖離25~35%",
+    "bias_neg_15": "月線負乖離15~25%",
 }
 
 BULLISH_SIGNALS = set(WEEKLY_BULLISH + DAILY_BULLISH)
@@ -82,6 +91,7 @@ FILTER_CATEGORIES = {
     "oversold": {"label": "RSI超賣", "codes": ["rsi_oversold", "w_rsi_oversold"], "bg": "#E6F1FB", "text": "#042C53"},
     "volume": {"label": "成交量異常", "codes": ["volume_spike", "w_volume_spike"], "bg": "#EEEDFE", "text": "#26215C"},
     "ma20": {"label": "月線(20日)", "codes": MA20_POS, "bg": "#E3EBEC", "text": "#1F3A44"},
+    "bias": {"label": "月線乖離≥15%", "codes": BIAS_CODES, "bg": "#F4E9D6", "text": "#6B4A14"},
     "ma5": {"label": "5日線", "codes": MA5_POS, "bg": "#E3EBEC", "text": "#1F3A44"},
 }
 
@@ -91,6 +101,7 @@ ARTIFACT_CATEGORIES = {
     "overbought": {"label": "RSI超買(漲勢一面倒)", "codes": ["rsi_overbought", "w_rsi_overbought"], "varBg": "--rise-soft", "varText": "--rise"},
     "oversold": {"label": "RSI超賣(跌勢一面倒)", "codes": ["rsi_oversold", "w_rsi_oversold"], "varBg": "--fall-soft", "varText": "--fall"},
     "volume": {"label": "成交量異常", "codes": ["volume_spike", "w_volume_spike"], "varBg": "--vol-soft", "varText": "--vol"},
+    "bias": {"label": "月線乖離≥15%", "codes": BIAS_CODES, "varBg": "--warn-soft", "varText": "--warn"},
     "cross": {"label": "交叉(參考)", "codes": CROSS, "varBg": "--bg", "varText": "--ink-soft"},
     "ma20": {"label": "月線(參考)", "codes": MA20_POS, "varBg": "--bg", "varText": "--ink-soft"},
     "ma5": {"label": "5日線(參考)", "codes": MA5_POS, "varBg": "--bg", "varText": "--ink-soft"},
@@ -182,6 +193,10 @@ def build_market_narrative(alerts: list[dict], universe: list[dict], total_unive
     above, below = ids({"close_above_ma20"}), ids({"close_below_ma20"})
     if above or below:
         extra.append(f"站上月線{len(above)}檔、跌破{len(below)}檔")
+    bp, bn = ids(set(BIAS_POS)), ids(set(BIAS_NEG))
+    if bp or bn:
+        far = ids({"bias_pos_25", "bias_pos_35", "bias_neg_25", "bias_neg_35"})
+        extra.append(f"月線乖離≥15%:正{len(bp)}檔、負{len(bn)}檔" + (f"(其中≥25%{len(far)}檔)" if far else ""))
     vol = ids({"volume_spike"})
     if vol:
         extra.append(f"量增{len(vol)}檔")
@@ -553,6 +568,12 @@ WEEKLY_CROSS_HTML = """
 WEEKLY_CROSS_JS = """
 // Badge look follows the backtest: strong/weak continuation in red/green, crossovers as neutral outlines.
 function sigStyle(code) {
+  if (code.startsWith("bias_")) {
+    const tone = code.startsWith("bias_pos") ? "rise" : "fall";
+    return code.endsWith("_35") ? `background:var(--${tone});color:var(--paper);font-weight:600`
+         : code.endsWith("_25") ? `background:var(--${tone}-soft);color:var(--${tone});font-weight:600;box-shadow:inset 0 0 0 1px var(--${tone})`
+         : `background:var(--${tone}-soft);color:var(--${tone})`;
+  }
   const cat = codeCategory(code);
   if (cat === "cross" || cat === "ma20" || cat === "ma5")
     return "background:transparent;color:var(--ink-soft);box-shadow:inset 0 0 0 1px var(--line-strong)";
@@ -711,6 +732,7 @@ GUIDE_HTML = f"""
         <dt style="color:var(--fall)">弱勢延續</dt><dd>{BACKTEST['weak']}。弱的股票傾向繼續弱;跟著大盤一起跌時創新低的訊號較弱,大盤在漲卻創新低的才是真警訊。</dd>
         <dt>RSI超買</dt><dd>近14日的漲跌幅裡,上漲占了七成以上,也就是漲勢一面倒。名稱聽起來像「漲過頭該賣」,但回測顯示之後多半續強,不是賣訊。</dd>
         <dt>RSI超賣</dt><dd>近14日的漲跌幅裡,下跌占了七成以上,也就是跌勢一面倒。名稱聽起來像「跌過頭該買」,但回測顯示之後多半續弱,不是買訊;同時創新低的更弱。</dd>
+        <dt style="color:var(--warn)">月線乖離</dt><dd>收盤價離20日均線(月線)多遠:(收盤÷月線−1)。分≥15%、≥25%、≥35%三級,正值代表漲離月線、負值代表跌離月線;每天只要還在範圍內就會列出,不是只在穿越那天。這項還沒做過回測,先當作「漲跌得多急」的參考。</dd>
         <dt style="color:var(--vol)">成交量異常</dt><dd>{BACKTEST['volume']}。</dd>
         <dt>參考類</dt><dd>{BACKTEST['cross']}。保留給你掌握盤面,不建議當買賣依據。</dd>
       </dl>
@@ -875,6 +897,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
     <span><i class="dot" style="background:var(--rise)"></i>強勢延續:創新高/RSI超買/突破布林上軌(日線與週線)</span>
     <span><i class="dot" style="background:var(--fall)"></i>弱勢延續:創新低/RSI超賣/跌破布林下軌(日線與週線)</span>
     <span><i class="dot" style="background:var(--vol)"></i>成交量異常</span>
+    <span><i class="dot" style="background:var(--warn)"></i>月線乖離≥15%/25%/35%(紅=漲離、綠=跌離;顏色越深級數越高)</span>
     <span><i class="dot" style="background:var(--line-strong)"></i>參考:均線/MACD/週線交叉、站上/跌破5日線與月線(回測預測力接近0;5日線不計入觸發檔數)</span>
   </div>
   <footer>資料來源:FinMind · 指標:MA交叉/收盤穿越5日線與月線/RSI/MACD/布林通道/成交量/新高新低,日線與週線各算一套(週線用5週vs20週、60週新高低,只在週收盤判斷;卡片上週線數值為含本週的暫時值),任一觸發即列入 · 搜尋可查全部{len(universe)}檔目前數值 · 僅供個人參考,非投資建議</footer>

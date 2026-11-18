@@ -32,6 +32,7 @@ SIGNAL_LABELS = {
 }
 
 PRICE_MA_PERIODS = (5, 20)
+BIAS_TIERS = (35, 25, 15)  # % distance of the close from its 20-day MA (月線乖離); highest tier reached wins
 
 
 def _price_ma_crosses(today, yesterday) -> list[tuple[str, str]]:
@@ -104,7 +105,22 @@ def screen_stock(df: pd.DataFrame, cfg: dict) -> list[dict]:
         ("ma_golden_cross", "ma_death_cross"), {"fast": fast, "slow": slow}, cfg["new_high_low_period"],
     )
     signals += _price_ma_crosses(df.iloc[-1], df.iloc[-2])
+    signals += _ma20_bias(df.iloc[-1])
     return [{"signal": code, "detail": label} for code, label in signals]
+
+
+def _ma20_bias(today) -> list[tuple[str, str]]:
+    """State, not event: fires every day the close is ≥15/25/35% above or below its 20-day MA."""
+    close, ma = today.get("close"), today.get("ma20")
+    if not (pd.notna(close) and pd.notna(ma) and ma > 0):
+        return []
+    dev = close / ma - 1
+    for t in BIAS_TIERS:
+        if dev >= t / 100:
+            return [(f"bias_pos_{t}", f"月線正乖離{dev * 100:+.1f}%(≥{t}%)")]
+        if dev <= -t / 100:
+            return [(f"bias_neg_{t}", f"月線負乖離{dev * 100:+.1f}%(≥{t}%)")]
+    return []
 
 
 def screen_weekly(df: pd.DataFrame, weekly: pd.DataFrame, cfg: dict) -> list[dict]:
