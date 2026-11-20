@@ -123,7 +123,8 @@ def main() -> None:
         snapshot.update({"stock_id": stock_id, "name": name_map.get(stock_id, "")})
         all_snapshots.append(snapshot)
 
-        signals = screener.screen_stock(df, ind_cfg) + screener.screen_weekly(df, weekly, ind_cfg)
+        signals = (screener.screen_stock(df, ind_cfg) + screener.screen_weekly(df, weekly, ind_cfg)
+                   + screener.screen_weekly_provisional(df, weekly, ind_cfg))
         for s in signals:
             all_alerts.append(
                 {

@@ -151,3 +151,25 @@ def screen_weekly(df: pd.DataFrame, weekly: pd.DataFrame, cfg: dict) -> list[dic
         cfg.get("weekly_new_high_low_period", cfg["new_high_low_period"]),
     )
     return [{"signal": code, "detail": label} for code, label in signals]
+
+
+def screen_weekly_provisional(df: pd.DataFrame, weekly: pd.DataFrame, cfg: dict) -> list[dict]:
+    """Mon-Thu preview: the weekly rules on the week so far (today's close as the week's close)
+    against the last completed week. Codes are 'wp_*' so they never mix with confirmed weekly
+    signals; weekly volume is left out because a part-week's volume is not comparable."""
+    if len(weekly) < 3 or screen_weekly(df, weekly, cfg):
+        return []  # too short, or today is the weekly judgement day (confirmed signals instead)
+    if weekly.iloc[-1]["last_date"] != df.iloc[-1]["date"]:
+        return []
+    fast, slow = cfg.get("weekly_ma_fast", 5), cfg.get("weekly_ma_slow", 20)
+    signals = _screen_bars(
+        weekly.iloc[-1], weekly.iloc[-2], cfg, "w_", f"wma{fast}", f"wma{slow}",
+        ("wma_golden_cross", "wma_death_cross"), {"fast": fast, "slow": slow},
+        cfg.get("weekly_new_high_low_period", cfg["new_high_low_period"]),
+    )
+    out = []
+    for code, label in signals:
+        if code == "w_volume_spike":
+            continue
+        out.append({"signal": "wp_" + code.removeprefix("w_"), "detail": f"{label}(本週暫定)"})
+    return out

@@ -40,9 +40,13 @@ RSI_NOTE = {
     "rsi_oversold": "近14日跌勢一面倒;回測多半續弱,不是買訊",
     "w_rsi_oversold": "近14週跌勢一面倒;回測多半續弱,不是買訊",
 }
-NOISY_CODES = set(MA5_POS)  # shown on the board under their own filter; not counted as "觸發", not listed in Telegram
+# Mon-Thu preview of the weekly rules on the week so far (screener.screen_weekly_provisional).
+WP_BULL = ["wp_wma_golden_cross", "wp_macd_golden_cross", "wp_bb_breakout_upper", "wp_new_high", "wp_rsi_overbought"]
+WP_BEAR = ["wp_wma_death_cross", "wp_macd_death_cross", "wp_bb_breakout_lower", "wp_new_low", "wp_rsi_oversold"]
+WP_CODES = WP_BULL + WP_BEAR
+NOISY_CODES = set(MA5_POS) | set(WP_CODES)  # board only: own filter, not in 全部/觸發 count or Telegram lists  # shown on the board under their own filter; not counted as "觸發", not listed in Telegram
 
-SIGNAL_ORDER = STRONG + WEAK + ["w_volume_spike", "volume_spike"] + BIAS_CODES + CROSS + MA_POS_CODES
+SIGNAL_ORDER = STRONG + WEAK + ["w_volume_spike", "volume_spike"] + BIAS_CODES + CROSS + MA_POS_CODES + WP_CODES
 
 SIGNAL_SECTION_TITLE = {
     "wma_golden_cross": "週線黃金交叉(參考)",
@@ -77,6 +81,16 @@ SIGNAL_SECTION_TITLE = {
     "bias_neg_35": "月線負乖離≥35%",
     "bias_neg_25": "月線負乖離25~35%",
     "bias_neg_15": "月線負乖離15~25%",
+    "wp_wma_golden_cross": "週線黃金交叉(本週暫定)",
+    "wp_wma_death_cross": "週線死亡交叉(本週暫定)",
+    "wp_macd_golden_cross": "週MACD金叉(本週暫定)",
+    "wp_macd_death_cross": "週MACD死叉(本週暫定)",
+    "wp_bb_breakout_upper": "週線突破布林上軌(本週暫定)",
+    "wp_bb_breakout_lower": "週線跌破布林下軌(本週暫定)",
+    "wp_new_high": "創60週新高(本週暫定)",
+    "wp_new_low": "創60週新低(本週暫定)",
+    "wp_rsi_overbought": "週RSI超買(本週暫定)",
+    "wp_rsi_oversold": "週RSI超賣(本週暫定)",
 }
 
 BULLISH_SIGNALS = set(WEEKLY_BULLISH + DAILY_BULLISH)
@@ -92,6 +106,7 @@ FILTER_CATEGORIES = {
     "volume": {"label": "成交量異常", "codes": ["volume_spike", "w_volume_spike"], "bg": "#EEEDFE", "text": "#26215C"},
     "ma20": {"label": "月線(20日)", "codes": MA20_POS, "bg": "#E3EBEC", "text": "#1F3A44"},
     "bias": {"label": "月線乖離≥15%", "codes": BIAS_CODES, "bg": "#F4E9D6", "text": "#6B4A14"},
+    "wprov": {"label": "週線(本週暫定)", "codes": WP_CODES, "bg": "#F3F2EE", "text": "#55585F"},
     "ma5": {"label": "5日線", "codes": MA5_POS, "bg": "#E3EBEC", "text": "#1F3A44"},
 }
 
@@ -102,6 +117,7 @@ ARTIFACT_CATEGORIES = {
     "oversold": {"label": "RSI超賣(跌勢一面倒)", "codes": ["rsi_oversold", "w_rsi_oversold"], "varBg": "--fall-soft", "varText": "--fall"},
     "volume": {"label": "成交量異常", "codes": ["volume_spike", "w_volume_spike"], "varBg": "--vol-soft", "varText": "--vol"},
     "bias": {"label": "月線乖離≥15%", "codes": BIAS_CODES, "varBg": "--warn-soft", "varText": "--warn"},
+    "wprov": {"label": "週線(本週暫定)", "codes": WP_CODES, "varBg": "--bg", "varText": "--ink-soft"},
     "cross": {"label": "交叉(參考)", "codes": CROSS, "varBg": "--bg", "varText": "--ink-soft"},
     "ma20": {"label": "月線(參考)", "codes": MA20_POS, "varBg": "--bg", "varText": "--ink-soft"},
     "ma5": {"label": "5日線(參考)", "codes": MA5_POS, "varBg": "--bg", "varText": "--ink-soft"},
@@ -175,6 +191,8 @@ def build_market_narrative(alerts: list[dict], universe: list[dict], total_unive
     lines = [f"{total_universe}檔中{len(by_stock)}檔觸發訊號。"
              f"強勢延續{len(strong)}檔{top_ind(strong)}、弱勢延續{len(weak)}檔{top_ind(weak)},{tone}。"]
 
+    wp_up = ids({"wp_bb_breakout_upper", "wp_new_high", "wp_wma_golden_cross"})
+    wp_dn = ids({"wp_bb_breakout_lower", "wp_new_low", "wp_wma_death_cross"})
     w_strong = ids({c for c in STRONG if c.startswith("w_")})
     w_weak = ids({c for c in WEAK if c.startswith("w_")})
     w_cross = ids({"wma_golden_cross", "wma_death_cross"})
@@ -186,6 +204,8 @@ def build_market_narrative(alerts: list[dict], universe: list[dict], total_unive
             parts.append(f"弱勢{len(w_weak)}檔({names(w_weak)})")
         tail = ";週線交叉見上方區塊" if w_cross else ""
         lines.append("週線:" + "、".join(parts) + tail + "。")
+    elif wp_up or wp_dn:
+        lines.append(f"週線本週暫定(週五收盤才確定):突破/新高/金叉{len(wp_up)}檔、跌破/新低/死叉{len(wp_dn)}檔。")
 
     ob, os_ = ids({"rsi_overbought"}), ids({"rsi_oversold"})
     extra = []
@@ -551,6 +571,11 @@ WEEKLY_CROSS_CSS = """
 .wx-prev-row .x { color: var(--fall); }
 .wx-prev-row div { min-width: 0; }
 .wx-note { font-size: 12px; color: var(--ink-faint); margin: 8px 0 0; }
+.wx-prov { margin-top: 10px; padding: 10px 12px; border: 1px dashed var(--line-strong); border-radius: 8px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.7; }
+.wx-prov[hidden] { display: none; }
+.wx-prov b { color: var(--ink); font-weight: 600; }
+.wx-prov .g { color: var(--rise); margin-right: 4px; }
+.wx-prov .x { color: var(--fall); margin-right: 4px; }
 @media (max-width: 560px) { .wx-cols { grid-template-columns: 1fr; } }
 """
 
@@ -561,6 +586,7 @@ WEEKLY_CROSS_HTML = """
       <div class="wx-col gold"><h3>黃金交叉 <b id="wx-g-n">0</b></h3><div id="wx-g" class="wx-chips"></div></div>
       <div class="wx-col death"><h3>死亡交叉 <b id="wx-d-n">0</b></h3><div id="wx-d" class="wx-chips"></div></div>
     </div>
+    <div id="wx-prov" class="wx-prov" hidden></div>
     <details class="wx-prev"><summary>前幾週的週線交叉</summary><div id="wx-prev"></div></details>
     <p class="wx-note">5週線與20週線交叉,只在週收盤判斷。下一次週收盤之前,這裡都保留最近一週的結果;點股票可查看指標與走勢。<br>回測(2016–2026):週線死叉之後60個交易日平均只輸同期平均0.9%、且只在2021年後成立,金叉約0%。當作中期趨勢的參考,不是買賣訊號。</p>
   </section>
@@ -568,7 +594,12 @@ WEEKLY_CROSS_HTML = """
 
 WEEKLY_CROSS_JS = """
 // Badge look follows the backtest: strong/weak continuation in red/green, crossovers as neutral outlines.
+const WP_BULL_SET = new Set(["wp_wma_golden_cross", "wp_macd_golden_cross", "wp_bb_breakout_upper", "wp_new_high", "wp_rsi_overbought"]);
 function sigStyle(code) {
+  if (code.startsWith("wp_")) {
+    const tone = WP_BULL_SET.has(code) ? "rise" : "fall";
+    return `background:transparent;color:var(--${tone});border:1px dashed var(--${tone});padding:2px 8px`;
+  }
   if (code.startsWith("bias_")) {
     const tone = code.startsWith("bias_pos") ? "rise" : "fall";
     return code.endsWith("_35") ? `background:var(--${tone});color:var(--paper);font-weight:600`
@@ -617,6 +648,17 @@ function renderWeeklyCross() {
   };
   fill("wx-g", pick(last, gi));
   fill("wx-d", pick(last, di));
+  const prov = document.getElementById("wx-prov");
+  const pg = STOCKS.filter(s => s.signals.some(g => g.code === "wp_wma_golden_cross"));
+  const pd = STOCKS.filter(s => s.signals.some(g => g.code === "wp_wma_death_cross"));
+  if (!today && (pg.length || pd.length)) {
+    const chip = s => `<button type="button" class="wx-link" data-sid="${s.stock_id}">${s.name}</button>`;
+    prov.innerHTML = `<b>本週到目前為止(暫定,週五收盤才確定)</b>`
+      + `<div><span class="g">金叉 ${pg.length}:</span>${pg.map(chip).join("、") || "—"}</div>`
+      + `<div><span class="x">死叉 ${pd.length}:</span>${pd.map(chip).join("、") || "—"}</div>`;
+    prov.hidden = false;
+    prov.onclick = (e) => { const b = e.target.closest(".wx-link"); if (b) openStock(b.dataset.sid); };
+  } else { prov.hidden = true; }
   const nm = list => list.length ? list.map(id => `<button type="button" class="wx-link" data-sid="${id}">${names[id] || id}</button>`).join("、") : "—";
   const prev = weekDays.slice(0, -1).slice(-6).reverse();
   document.getElementById("wx-prev").innerHTML = prev.length ? prev.map(d =>
@@ -734,6 +776,7 @@ GUIDE_HTML = f"""
         <dt>RSI超買</dt><dd>近14日的漲跌幅裡,上漲占了七成以上,也就是漲勢一面倒。名稱聽起來像「漲過頭該賣」,但回測顯示之後多半續強,不是賣訊。</dd>
         <dt>RSI超賣</dt><dd>近14日的漲跌幅裡,下跌占了七成以上,也就是跌勢一面倒。名稱聽起來像「跌過頭該買」,但回測顯示之後多半續弱,不是買訊;同時創新低的更弱。</dd>
         <dt style="color:var(--warn)">月線乖離</dt><dd>收盤價離20日均線(月線)多遠:(收盤÷月線−1)。分≥15%、≥25%、≥35%三級,正值代表漲離月線、負值代表跌離月線;每天只要還在範圍內就會列出,不是只在穿越那天。回測:正乖離之後平均報酬很高,但中位數接近0、勝率約五成,是少數大漲股拉高平均,一般情況沒有優勢;負乖離≥25%之後60個交易日中位數贏同期平均約8~12%、勝率67~80%,但只來自約120個交易日(集中在幾次大跌),而且股票池是事後的成分股,跌了沒回來的股票已被剔除,反彈幅度一定被高估。</dd>
+        <dt>週線(本週暫定)</dt><dd>週一到週四,用當天收盤價當作本週收盤,先算一次週線訊號(虛線標籤)。週五收盤才是正式結果,中間可能出現又消失;週成交量因為一週還沒結束不列入。暫定訊號沒有回測,也不計入觸發檔數。</dd>
         <dt style="color:var(--vol)">成交量異常</dt><dd>{BACKTEST['volume']}。</dd>
         <dt>參考類</dt><dd>{BACKTEST['cross']}。保留給你掌握盤面,不建議當買賣依據。</dd>
       </dl>
