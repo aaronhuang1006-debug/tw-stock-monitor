@@ -125,7 +125,7 @@ ARTIFACT_CATEGORIES = {
 
 
 TREND_METRICS = [
-    {"key": "all", "label": "觸發檔數", "series": [{"name": "觸發", "codes": [c for c in SIGNAL_ORDER if c not in MA_POS_CODES], "color": "--accent"}]},
+    {"key": "all", "label": "觸發檔數", "series": [{"name": "觸發", "codes": [c for c in SIGNAL_ORDER if c not in MA_POS_CODES and c not in WP_CODES], "color": "--accent"}]},
     {"key": "bs", "label": "強勢 vs 弱勢", "series": [
         {"name": "強勢延續", "codes": STRONG, "color": "--rise"},
         {"name": "弱勢延續", "codes": WEAK, "color": "--fall", "dash": "6 4"}]},
