@@ -1,0 +1,932 @@
+{
+ "updated": "2026-11-23",
+ "sources": {
+  "NDX": "slickcharts.com/nasdaq100 (2026-11-23)",
+  "SOX": "maintained list"
+ },
+ "note": "Membership is maintained by hand: review after index changes (Nasdaq-100 reconstitutes each December). Names and industries are filled from Yahoo Finance on the next run.",
+ "stocks": [
+  {
+   "stock_id": "AAPL",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ABNB",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ADBE",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ADI",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ADP",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ADSK",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "AEP",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ALAB",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "AMAT",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "AMD",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "AMGN",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "AMKR",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "AMZN",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "APP",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ARM",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ASML",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "AVGO",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "AXON",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "AZN",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "BIIB",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "BKNG",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "BKR",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CCEP",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CDNS",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CDW",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CEG",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CHTR",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CMCSA",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "COHR",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "COST",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CPRT",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CRUS",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CRWD",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CSCO",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CSGP",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CSX",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CTAS",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "CTSH",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "DASH",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "DDOG",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "DXCM",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "EA",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ENTG",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "EXC",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "FANG",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "FAST",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "FTNT",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "GEHC",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "GFS",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "GILD",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "GOOG",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "GOOGL",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "HON",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "IDXX",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "INTC",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "INTU",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ISRG",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "KDP",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "KHC",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "KLAC",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "LIN",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "LRCX",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "LSCC",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "LULU",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "MAR",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "MCHP",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "MDLZ",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "MELI",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "META",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "MKSI",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "MNST",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "MPWR",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "MRVL",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "MSFT",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "MSTR",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "MU",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "NFLX",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "NVDA",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "NXPI",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ODFL",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ON",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ONTO",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ORLY",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "PANW",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "PAYX",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "PCAR",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "PDD",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "PEP",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "PLTR",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "PYPL",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "QCOM",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "REGN",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ROP",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ROST",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "SBUX",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "SHOP",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "SNPS",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "SWKS",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "TEAM",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "TER",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "TMUS",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "TRI",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "TSLA",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "TSM",
+   "name": "",
+   "index": [
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "TTD",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "TTWO",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "TXN",
+   "name": "",
+   "index": [
+    "NDX",
+    "SOX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "VRSK",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "VRTX",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "WBD",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "WDAY",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "XEL",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  },
+  {
+   "stock_id": "ZS",
+   "name": "",
+   "index": [
+    "NDX"
+   ],
+   "industry": ""
+  }
+ ]
+}
