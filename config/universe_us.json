@@ -57,7 +57,7 @@
   },
   {
    "stock_id": "AEP",
-   "name": "American Electric Power Company",
+   "name": "American Electric Power",
    "index": [
     "NDX"
    ],
@@ -107,7 +107,7 @@
   },
   {
    "stock_id": "AMZN",
-   "name": "Amazon.com",
+   "name": "Amazon",
    "index": [
     "NDX"
    ],
@@ -115,7 +115,7 @@
   },
   {
    "stock_id": "APP",
-   "name": "Applovin",
+   "name": "AppLovin",
    "index": [
     "NDX"
    ],
@@ -123,7 +123,7 @@
   },
   {
    "stock_id": "ARM",
-   "name": "Arm",
+   "name": "Arm Holdings",
    "index": [
     "NDX",
     "SOX"
@@ -132,7 +132,7 @@
   },
   {
    "stock_id": "ASML",
-   "name": "ASML Holding - New York Re",
+   "name": "ASML",
    "index": [
     "NDX",
     "SOX"
@@ -174,7 +174,7 @@
   },
   {
    "stock_id": "BKNG",
-   "name": "Booking Common St",
+   "name": "Booking Holdings",
    "index": [
     "NDX"
    ],
@@ -182,7 +182,7 @@
   },
   {
    "stock_id": "BKR",
-   "name": "Baker Hughes Company",
+   "name": "Baker Hughes",
    "index": [
     "NDX"
    ],
@@ -190,7 +190,7 @@
   },
   {
    "stock_id": "CCEP",
-   "name": "Coca-Cola Europacific Partners",
+   "name": "Coca-Cola Europacific",
    "index": [
     "NDX"
    ],
@@ -214,7 +214,7 @@
   },
   {
    "stock_id": "CEG",
-   "name": "Constellation Energy Corporatio",
+   "name": "Constellation Energy",
    "index": [
     "NDX"
    ],
@@ -310,7 +310,7 @@
   },
   {
    "stock_id": "CTSH",
-   "name": "Cognizant Technology Solutions",
+   "name": "Cognizant",
    "index": [
     "NDX"
    ],
@@ -374,7 +374,7 @@
   },
   {
    "stock_id": "FAST",
-   "name": "Fastenal Company",
+   "name": "Fastenal",
    "index": [
     "NDX"
    ],
@@ -390,7 +390,7 @@
   },
   {
    "stock_id": "GEHC",
-   "name": "GE HealthCare Technologies",
+   "name": "GE HealthCare",
    "index": [
     "NDX"
    ],
@@ -415,7 +415,7 @@
   },
   {
    "stock_id": "GOOG",
-   "name": "Alphabet",
+   "name": "Alphabet(C股)",
    "index": [
     "NDX"
    ],
@@ -423,7 +423,7 @@
   },
   {
    "stock_id": "GOOGL",
-   "name": "Alphabet",
+   "name": "Alphabet(A股)",
    "index": [
     "NDX"
    ],
@@ -431,7 +431,7 @@
   },
   {
    "stock_id": "HON",
-   "name": "Honeywell International",
+   "name": "Honeywell",
    "index": [
     "NDX"
    ],
@@ -480,7 +480,7 @@
   },
   {
    "stock_id": "KHC",
-   "name": "The Kraft Heinz Company",
+   "name": "Kraft Heinz",
    "index": [
     "NDX"
    ],
@@ -514,7 +514,7 @@
   },
   {
    "stock_id": "LSCC",
-   "name": "Lattice Semiconductor Corporati",
+   "name": "Lattice Semiconductor",
    "index": [
     "SOX"
    ],
@@ -522,7 +522,7 @@
   },
   {
    "stock_id": "LULU",
-   "name": "lululemon athletica inc.",
+   "name": "Lululemon",
    "index": [
     "NDX"
    ],
@@ -538,7 +538,7 @@
   },
   {
    "stock_id": "MCHP",
-   "name": "Microchip Technologyorporat",
+   "name": "Microchip Technology",
    "index": [
     "NDX",
     "SOX"
@@ -571,7 +571,7 @@
   },
   {
    "stock_id": "MKSI",
-   "name": "MKS",
+   "name": "MKS Instruments",
    "index": [
     "SOX"
    ],
@@ -612,7 +612,7 @@
   },
   {
    "stock_id": "MSTR",
-   "name": "Strategy",
+   "name": "Strategy(MicroStrategy)",
    "index": [
     "NDX"
    ],
@@ -663,7 +663,7 @@
   },
   {
    "stock_id": "ON",
-   "name": "ON Semiconductor",
+   "name": "onsemi",
    "index": [
     "NDX",
     "SOX"
@@ -712,7 +712,7 @@
   },
   {
    "stock_id": "PDD",
-   "name": "PDD",
+   "name": "PDD Holdings",
    "index": [
     "NDX"
    ],
@@ -720,7 +720,7 @@
   },
   {
    "stock_id": "PEP",
-   "name": "Pepsico",
+   "name": "PepsiCo",
    "index": [
     "NDX"
    ],
@@ -744,7 +744,7 @@
   },
   {
    "stock_id": "QCOM",
-   "name": "QUALCOMMorporated",
+   "name": "Qualcomm",
    "index": [
     "NDX",
     "SOX"
@@ -833,7 +833,7 @@
   },
   {
    "stock_id": "TRI",
-   "name": "Thomson Reuters Corp",
+   "name": "Thomson Reuters",
    "index": [
     "NDX"
    ],
@@ -849,7 +849,7 @@
   },
   {
    "stock_id": "TSM",
-   "name": "Taiwan Semiconductor Manufactur",
+   "name": "TSMC(台積電ADR)",
    "index": [
     "SOX"
    ],
@@ -865,7 +865,7 @@
   },
   {
    "stock_id": "TTWO",
-   "name": "Take-Two Interactive Software,",
+   "name": "Take-Two Interactive",
    "index": [
     "NDX"
    ],
@@ -873,7 +873,7 @@
   },
   {
    "stock_id": "TXN",
-   "name": "Texas Instrumentsorporated",
+   "name": "Texas Instruments",
    "index": [
     "NDX",
     "SOX"
@@ -890,7 +890,7 @@
   },
   {
    "stock_id": "VRTX",
-   "name": "Vertex Pharmaceuticalsorpor",
+   "name": "Vertex Pharmaceuticals",
    "index": [
     "NDX"
    ],
@@ -898,7 +898,7 @@
   },
   {
    "stock_id": "WBD",
-   "name": "Warner Bros. Discovery -",
+   "name": "Warner Bros. Discovery",
    "index": [
     "NDX"
    ],

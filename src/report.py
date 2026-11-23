@@ -184,7 +184,9 @@ def build_summary_rows(alerts: list[dict], universe: list[dict], total_universe:
                 order.append(a["stock_name"])
         return "、".join(order[:n]) + ("等" if len(order) > n else "")
 
-    if len(strong) > len(weak) * 1.2:
+    if max(len(strong), len(weak)) < 0.05 * total_universe:
+        tone = "盤勢平靜"  # a handful either way is not a direction
+    elif len(strong) > len(weak) * 1.2:
         tone = "整體偏強"
     elif len(weak) > len(strong) * 1.2:
         tone = "整體偏弱"

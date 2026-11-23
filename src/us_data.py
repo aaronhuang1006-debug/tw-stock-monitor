@@ -6,6 +6,7 @@ history and tracking work unchanged.
 """
 import datetime
 import json
+import re
 import sqlite3
 import sys
 from pathlib import Path
@@ -51,9 +52,8 @@ def refresh_universe(path: Path) -> list[dict]:
             except Exception as exc:  # noqa: BLE001
                 print(f"[us-universe] {s['stock_id']}: {exc}", file=sys.stderr)
                 continue
-            name = info.get("shortName") or info.get("longName") or ""
-            for tail in (", Inc.", " Inc.", " Inc", " Corporation", " Corp.", " Holdings", " plc", " PLC", " N.V.", " Ltd.", " Co., Ltd."):
-                name = name.replace(tail, "")
+            name = info.get("longName") or info.get("shortName") or ""  # shortName is cut at ~30 chars
+            name = re.sub(r"[,]?\s+(Inc\.?|Incorporated|Corporation|Corp\.?|Company|plc|PLC|N\.V\.|Ltd\.?|Limited|S\.A\.)$", "", name.strip())
             s["name"] = s.get("name") or name.strip() or s["stock_id"]
             s["industry"] = s.get("industry") or _yahoo_industry(info.get("sector") or "", info.get("industry") or "")
         path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
