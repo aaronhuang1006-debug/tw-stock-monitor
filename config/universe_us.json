@@ -8,925 +8,925 @@
  "stocks": [
   {
    "stock_id": "AAPL",
-   "name": "",
+   "name": "Apple",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "資訊科技"
   },
   {
    "stock_id": "ABNB",
-   "name": "",
+   "name": "Airbnb",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "ADBE",
-   "name": "",
+   "name": "Adobe",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "ADI",
-   "name": "",
+   "name": "Analog Devices",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "ADP",
-   "name": "",
+   "name": "Automatic Data Processing",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "ADSK",
-   "name": "",
+   "name": "Autodesk",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "AEP",
-   "name": "",
+   "name": "American Electric Power Company",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "公用事業"
   },
   {
    "stock_id": "ALAB",
-   "name": "",
+   "name": "Astera Labs",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "AMAT",
-   "name": "",
+   "name": "Applied Materials",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體設備"
   },
   {
    "stock_id": "AMD",
-   "name": "",
+   "name": "Advanced Micro Devices",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "AMGN",
-   "name": "",
+   "name": "Amgen",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "醫療保健"
   },
   {
    "stock_id": "AMKR",
-   "name": "",
+   "name": "Amkor Technology",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體設備"
   },
   {
    "stock_id": "AMZN",
-   "name": "",
+   "name": "Amazon.com",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "APP",
-   "name": "",
+   "name": "Applovin",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "ARM",
-   "name": "",
+   "name": "Arm",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "ASML",
-   "name": "",
+   "name": "ASML Holding - New York Re",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體設備"
   },
   {
    "stock_id": "AVGO",
-   "name": "",
+   "name": "Broadcom",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "AXON",
-   "name": "",
+   "name": "Axon Enterprise",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "工業"
   },
   {
    "stock_id": "AZN",
-   "name": "",
+   "name": "AstraZeneca",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "醫療保健"
   },
   {
    "stock_id": "BIIB",
-   "name": "",
+   "name": "Biogen",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "醫療保健"
   },
   {
    "stock_id": "BKNG",
-   "name": "",
+   "name": "Booking Common St",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "BKR",
-   "name": "",
+   "name": "Baker Hughes Company",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "能源"
   },
   {
    "stock_id": "CCEP",
-   "name": "",
+   "name": "Coca-Cola Europacific Partners",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "必需消費"
   },
   {
    "stock_id": "CDNS",
-   "name": "",
+   "name": "Cadence Design Systems",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "CDW",
-   "name": "",
+   "name": "CDW",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "資訊科技"
   },
   {
    "stock_id": "CEG",
-   "name": "",
+   "name": "Constellation Energy Corporatio",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "公用事業"
   },
   {
    "stock_id": "CHTR",
-   "name": "",
+   "name": "Charter Communications",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "CMCSA",
-   "name": "",
+   "name": "Comcast",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "COHR",
-   "name": "",
+   "name": "Coherent",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "資訊科技"
   },
   {
    "stock_id": "COST",
-   "name": "",
+   "name": "Costco Wholesale",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "必需消費"
   },
   {
    "stock_id": "CPRT",
-   "name": "",
+   "name": "Copart",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "工業"
   },
   {
    "stock_id": "CRUS",
-   "name": "",
+   "name": "Cirrus Logic",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "CRWD",
-   "name": "",
+   "name": "CrowdStrike",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "CSCO",
-   "name": "",
+   "name": "Cisco Systems",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "資訊科技"
   },
   {
    "stock_id": "CSGP",
-   "name": "",
+   "name": "CoStar Group",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "房地產"
   },
   {
    "stock_id": "CSX",
-   "name": "",
+   "name": "CSX",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "工業"
   },
   {
    "stock_id": "CTAS",
-   "name": "",
+   "name": "Cintas",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "工業"
   },
   {
    "stock_id": "CTSH",
-   "name": "",
+   "name": "Cognizant Technology Solutions",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "資訊科技"
   },
   {
    "stock_id": "DASH",
-   "name": "",
+   "name": "DoorDash",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "DDOG",
-   "name": "",
+   "name": "Datadog",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "DXCM",
-   "name": "",
+   "name": "DexCom",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "醫療保健"
   },
   {
    "stock_id": "EA",
-   "name": "",
+   "name": "Electronic Arts",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "ENTG",
-   "name": "",
+   "name": "Entegris",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體設備"
   },
   {
    "stock_id": "EXC",
-   "name": "",
+   "name": "Exelon",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "公用事業"
   },
   {
    "stock_id": "FANG",
-   "name": "",
+   "name": "Diamondback Energy",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "能源"
   },
   {
    "stock_id": "FAST",
-   "name": "",
+   "name": "Fastenal Company",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "工業"
   },
   {
    "stock_id": "FTNT",
-   "name": "",
+   "name": "Fortinet",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "GEHC",
-   "name": "",
+   "name": "GE HealthCare Technologies",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "醫療保健"
   },
   {
    "stock_id": "GFS",
-   "name": "",
+   "name": "GlobalFoundries",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "GILD",
-   "name": "",
+   "name": "Gilead Sciences",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "醫療保健"
   },
   {
    "stock_id": "GOOG",
-   "name": "",
+   "name": "Alphabet",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "GOOGL",
-   "name": "",
+   "name": "Alphabet",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "HON",
-   "name": "",
+   "name": "Honeywell International",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "工業"
   },
   {
    "stock_id": "IDXX",
-   "name": "",
+   "name": "IDEXX Laboratories",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "醫療保健"
   },
   {
    "stock_id": "INTC",
-   "name": "",
+   "name": "Intel",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "INTU",
-   "name": "",
+   "name": "Intuit",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "ISRG",
-   "name": "",
+   "name": "Intuitive Surgical",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "醫療保健"
   },
   {
    "stock_id": "KDP",
-   "name": "",
+   "name": "Keurig Dr Pepper",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "必需消費"
   },
   {
    "stock_id": "KHC",
-   "name": "",
+   "name": "The Kraft Heinz Company",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "必需消費"
   },
   {
    "stock_id": "KLAC",
-   "name": "",
+   "name": "KLA",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體設備"
   },
   {
    "stock_id": "LIN",
-   "name": "",
+   "name": "Linde",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "原物料"
   },
   {
    "stock_id": "LRCX",
-   "name": "",
+   "name": "Lam Research",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體設備"
   },
   {
    "stock_id": "LSCC",
-   "name": "",
+   "name": "Lattice Semiconductor Corporati",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "LULU",
-   "name": "",
+   "name": "lululemon athletica inc.",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "MAR",
-   "name": "",
+   "name": "Marriott International",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "MCHP",
-   "name": "",
+   "name": "Microchip Technologyorporat",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "MDLZ",
-   "name": "",
+   "name": "Mondelez International",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "必需消費"
   },
   {
    "stock_id": "MELI",
-   "name": "",
+   "name": "MercadoLibre",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "META",
-   "name": "",
+   "name": "Meta Platforms",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "MKSI",
-   "name": "",
+   "name": "MKS",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "資訊科技"
   },
   {
    "stock_id": "MNST",
-   "name": "",
+   "name": "Monster Beverage",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "必需消費"
   },
   {
    "stock_id": "MPWR",
-   "name": "",
+   "name": "Monolithic Power Systems",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "MRVL",
-   "name": "",
+   "name": "Marvell Technology",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "MSFT",
-   "name": "",
+   "name": "Microsoft",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "MSTR",
-   "name": "",
+   "name": "Strategy",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "MU",
-   "name": "",
+   "name": "Micron Technology",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "NFLX",
-   "name": "",
+   "name": "Netflix",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "NVDA",
-   "name": "",
+   "name": "NVIDIA",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "NXPI",
-   "name": "",
+   "name": "NXP Semiconductors",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "ODFL",
-   "name": "",
+   "name": "Old Dominion Freight Line",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "工業"
   },
   {
    "stock_id": "ON",
-   "name": "",
+   "name": "ON Semiconductor",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "ONTO",
-   "name": "",
+   "name": "Onto Innovation",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體設備"
   },
   {
    "stock_id": "ORLY",
-   "name": "",
+   "name": "O'Reilly Automotive",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "PANW",
-   "name": "",
+   "name": "Palo Alto Networks",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "PAYX",
-   "name": "",
+   "name": "Paychex",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "PCAR",
-   "name": "",
+   "name": "PACCAR",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "工業"
   },
   {
    "stock_id": "PDD",
-   "name": "",
+   "name": "PDD",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "PEP",
-   "name": "",
+   "name": "Pepsico",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "必需消費"
   },
   {
    "stock_id": "PLTR",
-   "name": "",
+   "name": "Palantir Technologies",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "PYPL",
-   "name": "",
+   "name": "PayPal",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "金融"
   },
   {
    "stock_id": "QCOM",
-   "name": "",
+   "name": "QUALCOMMorporated",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "REGN",
-   "name": "",
+   "name": "Regeneron Pharmaceuticals",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "醫療保健"
   },
   {
    "stock_id": "ROP",
-   "name": "",
+   "name": "Roper Technologies",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "ROST",
-   "name": "",
+   "name": "Ross Stores",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "SBUX",
-   "name": "",
+   "name": "Starbucks",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "SHOP",
-   "name": "",
+   "name": "Shopify",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "SNPS",
-   "name": "",
+   "name": "Synopsys",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "SWKS",
-   "name": "",
+   "name": "Skyworks Solutions",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "TEAM",
-   "name": "",
+   "name": "Atlassian",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "TER",
-   "name": "",
+   "name": "Teradyne",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體設備"
   },
   {
    "stock_id": "TMUS",
-   "name": "",
+   "name": "T-Mobile US",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "TRI",
-   "name": "",
+   "name": "Thomson Reuters Corp",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "工業"
   },
   {
    "stock_id": "TSLA",
-   "name": "",
+   "name": "Tesla",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "非必需消費"
   },
   {
    "stock_id": "TSM",
-   "name": "",
+   "name": "Taiwan Semiconductor Manufactur",
    "index": [
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "TTD",
-   "name": "",
+   "name": "The Trade Desk",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "TTWO",
-   "name": "",
+   "name": "Take-Two Interactive Software,",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "TXN",
-   "name": "",
+   "name": "Texas Instrumentsorporated",
    "index": [
     "NDX",
     "SOX"
    ],
-   "industry": ""
+   "industry": "半導體"
   },
   {
    "stock_id": "VRSK",
-   "name": "",
+   "name": "Verisk Analytics",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "工業"
   },
   {
    "stock_id": "VRTX",
-   "name": "",
+   "name": "Vertex Pharmaceuticalsorpor",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "醫療保健"
   },
   {
    "stock_id": "WBD",
-   "name": "",
+   "name": "Warner Bros. Discovery -",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "通訊服務"
   },
   {
    "stock_id": "WDAY",
-   "name": "",
+   "name": "Workday",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   },
   {
    "stock_id": "XEL",
-   "name": "",
+   "name": "Xcel Energy",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "公用事業"
   },
   {
    "stock_id": "ZS",
-   "name": "",
+   "name": "Zscaler",
    "index": [
     "NDX"
    ],
-   "industry": ""
+   "industry": "軟體"
   }
  ]
 }
