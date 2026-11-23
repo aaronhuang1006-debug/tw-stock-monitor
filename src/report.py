@@ -880,9 +880,57 @@ listsFromLocal();
 """
 
 
+TRACK_CSS = """
+.track-body { overflow-x: auto; }
+.track-body table { min-width: 560px; font-size: 12.5px; }
+.track-body th, .track-body td { padding: 6px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+.track-body th:first-child, .track-body td:first-child { text-align: left; }
+.track-body td.v { font-family: "IBM Plex Mono", monospace; }
+.track-body td.v .n { color: var(--ink-faint); font-size: 11px; margin-left: 4px; }
+.track-body .pos { color: var(--rise); }
+.track-body .neg { color: var(--fall); }
+.track-body .na { color: var(--ink-faint); }
+"""
+
+
+def _track_html(tracking: dict | None) -> str:
+    """實戰追蹤: real signals since the log started, scored by excess return vs the universe."""
+    if not tracking or not tracking.get("groups"):
+        return ""
+
+    def cell(st: dict, min_n: int = 30) -> str:
+        if not st or not st.get("n"):
+            return '<td class="v na">—</td>'
+        m = st["mean"] * 100
+        cls = "pos" if m > 0 else "neg"
+        thin = ' title="樣本少於30,參考價值低"' if st["n"] < min_n else ""
+        return (f'<td class="v"{thin}><span class="{cls}">{m:+.1f}%</span> · {st["hit"] * 100:.0f}%'
+                f'<span class="n">n={st["n"]}</span></td>')
+
+    rows = []
+    for g in tracking["groups"]:
+        bt = g.get("backtest60")
+        bt_cell = f'<td class="v"><span class="{"pos" if bt > 0 else "neg"}">{bt * 100:+.1f}%</span></td>' if bt is not None else '<td class="v na">—</td>'
+        rows.append(f'<tr><td>{g["label"]}</td><td class="v">{g["fired"]}</td>'
+                    f'{cell(g.get("5"))}{cell(g.get("20"))}{cell(g.get("60"))}{bt_cell}</tr>')
+    seeded = "前段是從當時的價格重算出來的訊號,之後才是每天實際顯示的訊號。" if tracking.get("seeded_from_history") else ""
+    return f"""
+  <details class="guide">
+    <summary>實戰追蹤(自 {tracking['since']} 起的真實訊號)</summary>
+    <div class="guide-body track-body">
+      <table>
+        <thead><tr><th>訊號</th><th>出現次數</th><th>5日後</th><th>20日後</th><th>60日後</th><th>回測60日</th></tr></thead>
+        <tbody>{''.join(rows)}</tbody>
+      </table>
+      <p>每格是:平均超額報酬(減掉同期170檔平均)· 勝率(超額報酬>0的比例),n 是已經走完該天數的訊號數;還沒走完的不計入,所以60日要約三個月後才有數字。「回測60日」是2016–2026回測的同一組訊號,用來對照實戰是否一致。樣本少的時候(n<30,或集中在同一兩次大漲大跌)數字會大幅跳動,看方向比看數字重要。{seeded}</p>
+    </div>
+  </details>
+"""
+
+
 def build_artifact_html(run_date: str, alerts: list[dict], universe: list[dict], news_map: dict | None = None,
                          snapshots: list[dict] | None = None, history: dict | None = None,
-                         series: dict | None = None) -> str:
+                         series: dict | None = None, tracking: dict | None = None) -> str:
     """Standalone page matching the published Claude Artifact's design (red=偏多/rise, green=偏空/fall per TWSE convention). The scheduled task reads this file's content and republishes it to the same artifact URL each trading day."""
     narrative = build_market_narrative(alerts, universe, len(universe))
     payload = _build_unified_payload(alerts, universe, news_map, snapshots)
@@ -983,6 +1031,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 {NAV_CSS}
 {GUIDE_CSS}
 {LISTS_CSS}
+{TRACK_CSS}
 </style>
 
 <div class="wrap">
@@ -1009,7 +1058,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 
   <div id="filters" class="filters"></div>
   <p id="list-note" class="list-note" hidden></p>
-{GUIDE_HTML}
+{GUIDE_HTML}{_track_html(tracking)}
   <div id="table-wrap" class="table-wrap">
     <table>
       <thead><tr><th>代號</th><th>名稱</th><th>產業</th><th>觸發訊號 <span class="th-hint">點任一列看個股</span></th></tr></thead>
@@ -1143,10 +1192,10 @@ render();
 
 def write_artifact_source(report_dir: str, run_date: str, alerts: list[dict], universe: list[dict],
                            news_map: dict | None = None, snapshots: list[dict] | None = None,
-                           history: dict | None = None, series: dict | None = None) -> str:
+                           history: dict | None = None, series: dict | None = None, tracking: dict | None = None) -> str:
     Path(report_dir).mkdir(parents=True, exist_ok=True)
     path = Path(report_dir) / f"{run_date}_artifact.html"
-    path.write_text(build_artifact_html(run_date, alerts, universe, news_map, snapshots, history, series), encoding="utf-8")
+    path.write_text(build_artifact_html(run_date, alerts, universe, news_map, snapshots, history, series, tracking), encoding="utf-8")
     return str(path)
 
 

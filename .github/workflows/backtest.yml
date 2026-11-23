@@ -3,6 +3,8 @@ name: Signal backtest
 # Runs src/backtest.py against ~10 years of FinMind prices and commits the results to backtest/results/.
 # It keeps its own price database (data/backtest.db, separate cache key), so the daily scan's data is untouched.
 on:
+  schedule:
+    - cron: "17 18 1 * *"   # 1st of each month, 02:17 Asia/Taipei: refresh the 10-year backtest with the new month
   workflow_dispatch:
     inputs:
       start:

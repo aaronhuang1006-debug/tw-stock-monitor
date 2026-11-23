@@ -8,7 +8,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src import db, fetch_data, history, indicators, screener, report, notify_telegram  # noqa: E402
+from src import db, fetch_data, history, indicators, screener, report, notify_telegram, tracking  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -168,11 +168,24 @@ def main() -> None:
     history.trim(hist, hist_days)
     history.save(hist_path, hist)
     print(f"[history] {len(hist['days'])} 天紀錄(本次回補 {added} 天)", file=sys.stderr)
+
+    # Live tracking: keep every day's real signals (never trimmed) and score how they did since.
+    track = None
+    try:
+        log_path = ROOT / "docs" / "track_log.json"
+        log = tracking.load_log(log_path, seed=hist)
+        tracking.record_day(log, effective_date, len(all_snapshots), all_alerts)
+        tracking.save_log(log_path, log)
+        track = tracking.compute(conn, log, [s["stock_id"] for s in universe], ROOT / "backtest" / "results" / "results.json")
+        (ROOT / "docs" / "tracking.json").write_text(json.dumps(track, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"[tracking] {len(log['days'])} 天訊號紀錄,自 {track.get('since')}", file=sys.stderr)
+    except Exception as exc:  # noqa: BLE001 - tracking must never block the daily report
+        print(f"[tracking] skipped: {exc}", file=sys.stderr)
     series = history.build_series(tails)
     csv_path = report.write_csv_report(str(ROOT / cfg["report_dir"]), effective_date, all_alerts)
     html_path = report.write_html_report(str(ROOT / cfg["report_dir"]), effective_date, all_alerts, universe, news_map, all_snapshots)
     artifact_path = report.write_artifact_source(str(ROOT / cfg["report_dir"]), effective_date, all_alerts, universe, news_map, all_snapshots,
-                                              history=hist, series=series)
+                                              history=hist, series=series, tracking=track)
     summary = report.build_summary_text(effective_date, all_alerts, fetch_stats, universe)
 
     # Stable path for GitHub Pages (docs/ on main) — overwritten every run,
