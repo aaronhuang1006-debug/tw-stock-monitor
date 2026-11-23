@@ -224,6 +224,20 @@ footer { margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top:
 .track-body .neg { color: var(--fall); }
 .track-body .na { color: var(--ink-faint); }
 
+
+.summary { display: flex; flex-direction: column; gap: 10px; }
+.sum-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.tone { font-size: 14px; font-weight: 600; padding: 3px 12px; border-radius: 999px; background: var(--bg); color: var(--ink-soft); }
+.tone.weak { background: var(--fall-soft); color: var(--fall); }
+.tone.strong { background: var(--rise-soft); color: var(--rise); }
+.sum-sub { font-size: 13px; color: var(--ink-soft); }
+.sum-rows { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: 14px; line-height: 1.55; }
+.sum-rows dt { color: var(--ink-faint); font-size: 12.5px; padding-top: 2px; }
+.sum-rows dd { margin: 0; min-width: 0; }
+.sum-rows b { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 15px; }
+.sum-rows .lvl-極端 { color: var(--paper); background: var(--fall); border-radius: 4px; padding: 0 5px; }
+.sum-rows .lvl-偏高 { color: var(--fall); }
+
 </style>
 
 <div class="wrap">
@@ -239,7 +253,7 @@ footer { margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top:
     <span class="date">2026-11-23(週一)</span>
   </div>
   <p class="subhead">台灣50 + 中型100 成分股 · 每個交易日收盤後自動更新</p>
-  <div class="narrative">170檔中127檔觸發訊號。強勢延續0檔、弱勢延續95檔(電子工業居多),整體偏弱。週線本週暫定(週五收盤才確定):突破/新高/金叉0檔、跌破/新低/死叉81檔。RSI超買0檔、超賣76檔、站上月線1檔、跌破0檔、月線乖離≥15%:正0檔、負77檔(其中≥25%27檔)、量增9檔。全市場超賣比例45%,極端(歷史上≥30%後常見反彈,樣本少)。</div>
+  <div class="narrative summary"><div class="sum-head"><span class="tone weak">整體偏弱</span><span class="sum-sub">170檔中127檔觸發訊號</span></div><dl class="sum-rows"><dt>強弱</dt><dd>強勢延續 <b>0</b> 檔・弱勢延續 <b>95</b> 檔(電子工業居多)</dd><dt>超買超賣</dt><dd>超賣 <b>76</b> 檔(全市場 <b>45%</b>,<span class="lvl-極端">極端</span>)・超買 <b>0</b> 檔</dd><dt>月線乖離</dt><dd>負乖離≥15% <b>77</b> 檔(≥25% <b>27</b> 檔)・正乖離≥15% <b>0</b> 檔</dd><dt>週線</dt><dd>本週暫定:突破/新高/金叉 <b>0</b> 檔・跌破/新低/死叉 <b>81</b> 檔(週五收盤才確定)</dd><dt>其他</dt><dd>量增 <b>9</b> 檔・站上月線 <b>1</b> 檔・跌破月線 <b>0</b> 檔</dd></dl></div>
   <div class="stats">
     <div class="stat"><p class="label">監測檔數</p><p class="value">170</p></div>
     <div class="stat"><p class="label">觸發訊號</p><p class="value">127</p></div>

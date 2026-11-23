@@ -1,4 +1,5 @@
 import csv
+import re
 import json
 from collections import Counter
 from pathlib import Path
@@ -161,12 +162,13 @@ def _top_industries(stock_ids: set, industry_map: dict, top_n: int = 2) -> list[
     return [f"{name}({cnt}檔)" for name, cnt in ranked[:top_n]]
 
 
-def build_market_narrative(alerts: list[dict], universe: list[dict], total_universe: int) -> str:
-    """Short daily summary (board + Telegram). Details live in the lists and filters, not here."""
+def build_summary_rows(alerts: list[dict], universe: list[dict], total_universe: int) -> dict:
+    """The day at a glance: a headline, an overall tone, and one short row per topic.
+    Shared by Telegram (plain lines) and the board (a small labelled grid)."""
     industry_map = {s["stock_id"]: s.get("industry", "其他") for s in universe}
     by_stock = _group_by_stock([a for a in alerts if a["signal"] not in NOISY_CODES])
     if not by_stock:
-        return f"{total_universe}檔中沒有個股觸發訊號。"
+        return {"headline": f"{total_universe}檔中沒有個股觸發訊號", "tone": "", "rows": []}
 
     ids = lambda codes: {a["stock_id"] for a in alerts if a["signal"] in codes}  # noqa: E731
     strong, weak = ids(STRONG_SET), ids(WEAK_SET)
@@ -188,46 +190,71 @@ def build_market_narrative(alerts: list[dict], universe: list[dict], total_unive
         tone = "整體偏弱"
     else:
         tone = "強弱互見"
-    lines = [f"{total_universe}檔中{len(by_stock)}檔觸發訊號。"
-             f"強勢延續{len(strong)}檔{top_ind(strong)}、弱勢延續{len(weak)}檔{top_ind(weak)},{tone}。"]
+    rows = [("強弱", f"強勢延續 {len(strong)} 檔{top_ind(strong) if strong else ''}・弱勢延續 {len(weak)} 檔{top_ind(weak) if weak else ''}")]
 
-    wp_up = ids({"wp_bb_breakout_upper", "wp_new_high", "wp_wma_golden_cross"})
-    wp_dn = ids({"wp_bb_breakout_lower", "wp_new_low", "wp_wma_death_cross"})
+    ob, os_ = ids({"rsi_overbought"}), ids({"rsi_oversold"})
+    share = len(os_) / total_universe if total_universe else 0
+    level = "極端" if share >= 0.3 else "偏高" if share >= 0.1 else "正常"
+    rows.append(("超買超賣", f"超賣 {len(os_)} 檔(全市場 {share:.0%},{level})・超買 {len(ob)} 檔"))
+
+    bp, bn = ids(set(BIAS_POS)), ids(set(BIAS_NEG))
+    if bp or bn:
+        far_n = ids({"bias_neg_25", "bias_neg_35"})
+        far_p = ids({"bias_pos_25", "bias_pos_35"})
+        rows.append(("月線乖離", f"負乖離≥15% {len(bn)} 檔" + (f"(≥25% {len(far_n)} 檔)" if far_n else "")
+                     + f"・正乖離≥15% {len(bp)} 檔" + (f"(≥25% {len(far_p)} 檔)" if far_p else "")))
+
     w_strong = ids({c for c in STRONG if c.startswith("w_")})
     w_weak = ids({c for c in WEAK if c.startswith("w_")})
     w_cross = ids({"wma_golden_cross", "wma_death_cross"})
+    wp_up = ids({"wp_bb_breakout_upper", "wp_new_high", "wp_wma_golden_cross"})
+    wp_dn = ids({"wp_bb_breakout_lower", "wp_new_low", "wp_wma_death_cross"})
     if w_strong or w_weak or w_cross:
-        parts = []
-        if w_strong:
-            parts.append(f"強勢{len(w_strong)}檔({names(w_strong)})")
-        if w_weak:
-            parts.append(f"弱勢{len(w_weak)}檔({names(w_weak)})")
-        tail = ";週線交叉見上方區塊" if w_cross else ""
-        lines.append("週線:" + "、".join(parts) + tail + "。")
+        txt = (f"週收盤:強勢 {len(w_strong)} 檔" + (f"({names(w_strong)})" if w_strong else "")
+               + f"・弱勢 {len(w_weak)} 檔" + (f"({names(w_weak)})" if w_weak else ""))
+        rows.append(("週線", txt + ("・交叉見週線區塊" if w_cross else "")))
     elif wp_up or wp_dn:
-        lines.append(f"週線本週暫定(週五收盤才確定):突破/新高/金叉{len(wp_up)}檔、跌破/新低/死叉{len(wp_dn)}檔。")
+        rows.append(("週線", f"本週暫定:突破/新高/金叉 {len(wp_up)} 檔・跌破/新低/死叉 {len(wp_dn)} 檔(週五收盤才確定)"))
 
-    ob, os_ = ids({"rsi_overbought"}), ids({"rsi_oversold"})
-    extra = []
-    if ob or os_:
-        extra.append(f"RSI超買{len(ob)}檔、超賣{len(os_)}檔")
-    above, below = ids({"close_above_ma20"}), ids({"close_below_ma20"})
-    if above or below:
-        extra.append(f"站上月線{len(above)}檔、跌破{len(below)}檔")
-    bp, bn = ids(set(BIAS_POS)), ids(set(BIAS_NEG))
-    if bp or bn:
-        far = ids({"bias_pos_25", "bias_pos_35", "bias_neg_25", "bias_neg_35"})
-        extra.append(f"月線乖離≥15%:正{len(bp)}檔、負{len(bn)}檔" + (f"(其中≥25%{len(far)}檔)" if far else ""))
-    vol = ids({"volume_spike"})
-    if vol:
-        extra.append(f"量增{len(vol)}檔")
-    if extra:
-        lines.append("、".join(extra) + "。")
-    share = len(os_) / total_universe if total_universe else 0
-    if share >= 0.2:
-        level = "極端" if share >= 0.3 else "偏高"
-        lines.append(f"全市場超賣比例{share:.0%},{level}(歷史上≥30%後常見反彈,樣本少)。")
-    return "".join(lines)
+    vol, above, below = ids({"volume_spike"}), ids({"close_above_ma20"}), ids({"close_below_ma20"})
+    rows.append(("其他", f"量增 {len(vol)} 檔・站上月線 {len(above)} 檔・跌破月線 {len(below)} 檔"))
+    return {"headline": f"{total_universe}檔中{len(by_stock)}檔觸發訊號", "tone": tone, "rows": rows}
+
+
+def build_market_narrative(alerts: list[dict], universe: list[dict], total_universe: int) -> str:
+    """Plain-text version (Telegram, local report): headline line, then one line per topic."""
+    sm = build_summary_rows(alerts, universe, total_universe)
+    head = sm["headline"] + (f" · {sm['tone']}" if sm["tone"] else "")
+    return "\n".join([head] + [f"{label}:{text}" for label, text in sm["rows"]])
+
+
+SUMMARY_CSS = """
+.summary { display: flex; flex-direction: column; gap: 10px; }
+.sum-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.tone { font-size: 14px; font-weight: 600; padding: 3px 12px; border-radius: 999px; background: var(--bg); color: var(--ink-soft); }
+.tone.weak { background: var(--fall-soft); color: var(--fall); }
+.tone.strong { background: var(--rise-soft); color: var(--rise); }
+.sum-sub { font-size: 13px; color: var(--ink-soft); }
+.sum-rows { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: 14px; line-height: 1.55; }
+.sum-rows dt { color: var(--ink-faint); font-size: 12.5px; padding-top: 2px; }
+.sum-rows dd { margin: 0; min-width: 0; }
+.sum-rows b { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 15px; }
+.sum-rows .lvl-極端 { color: var(--paper); background: var(--fall); border-radius: 4px; padding: 0 5px; }
+.sum-rows .lvl-偏高 { color: var(--fall); }
+"""
+
+
+def _summary_html(alerts: list[dict], universe: list[dict], total_universe: int) -> str:
+    sm = build_summary_rows(alerts, universe, total_universe)
+    cls = {"整體偏弱": "weak", "整體偏強": "strong"}.get(sm["tone"], "")
+    rows = []
+    for label, text in sm["rows"]:
+        t = re.sub(r"(\d+%?)(?= 檔|,|\))", r"<b>\1</b>", text)
+        t = re.sub(r",(極端|偏高)\)", r',<span class="lvl-\1">\1</span>)', t)
+        rows.append(f"<dt>{label}</dt><dd>{t}</dd>")
+    tone = f'<span class="tone {cls}">{sm["tone"]}</span>' if sm["tone"] else ""
+    return (f'<div class="narrative summary"><div class="sum-head">{tone}<span class="sum-sub">{sm["headline"]}</span></div>'
+            f'<dl class="sum-rows">{"".join(rows)}</dl></div>')
 
 def write_csv_report(report_dir: str, run_date: str, alerts: list[dict]) -> str:
     Path(report_dir).mkdir(parents=True, exist_ok=True)
@@ -1032,6 +1059,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 {GUIDE_CSS}
 {LISTS_CSS}
 {TRACK_CSS}
+{SUMMARY_CSS}
 </style>
 
 <div class="wrap">
@@ -1041,7 +1069,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
     <span class="date">{run_date}(週{weekday})</span>
   </div>
   <p class="subhead">台灣50 + 中型100 成分股 · 每個交易日收盤後自動更新</p>
-  <div class="narrative">{narrative}</div>
+  {_summary_html(alerts, universe, len(universe))}
   <div class="stats">
     <div class="stat"><p class="label">監測檔數</p><p class="value">{len(universe)}</p></div>
     <div class="stat"><p class="label">觸發訊號</p><p class="value">{triggered_count}</p></div>
