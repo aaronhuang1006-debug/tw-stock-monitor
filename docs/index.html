@@ -213,6 +213,17 @@ footer { margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top:
 .list-note { font-size: 12.5px; color: var(--ink-faint); margin: -6px 0 14px; }
 .list-note[hidden] { display: none; }
 
+
+.track-body { overflow-x: auto; }
+.track-body table { min-width: 560px; font-size: 12.5px; }
+.track-body th, .track-body td { padding: 6px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+.track-body th:first-child, .track-body td:first-child { text-align: left; }
+.track-body td.v { font-family: "IBM Plex Mono", monospace; }
+.track-body td.v .n { color: var(--ink-faint); font-size: 11px; margin-left: 4px; }
+.track-body .pos { color: var(--rise); }
+.track-body .neg { color: var(--fall); }
+.track-body .na { color: var(--ink-faint); }
+
 </style>
 
 <div class="wrap">
@@ -286,6 +297,17 @@ footer { margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top:
         <dt>參考類</dt><dd>均線、MACD、週線的黃金/死亡交叉,以及站上/跌破5日線、月線,之後的表現跟平均差不多(多在±0.9%內,低於來回交易成本0.585%)。保留給你掌握盤面,不建議當買賣依據。</dd>
       </dl>
       <p>回測方法:每個訊號觸發後的報酬,減掉同一天170檔的平均報酬,所以大盤漲跌不算訊號的功勞。限制:股票池是現在的成分股(挑了事後贏家,強勢訊號可能被高估)、用未還原股價。完整數字在 GitHub 的 backtest/results。</p>
+    </div>
+  </details>
+
+  <details class="guide">
+    <summary>實戰追蹤(自 2026-05-29 起的真實訊號)</summary>
+    <div class="guide-body track-body">
+      <table>
+        <thead><tr><th>訊號</th><th>出現次數</th><th>5日後</th><th>20日後</th><th>60日後</th><th>回測60日</th></tr></thead>
+        <tbody><tr><td>強勢延續</td><td class="v">5334</td><td class="v"><span class="pos">+0.2%</span> · 49%<span class="n">n=5281</span></td><td class="v"><span class="neg">-1.5%</span> · 40%<span class="n">n=4940</span></td><td class="v"><span class="pos">+0.9%</span> · 46%<span class="n">n=2908</span></td><td class="v"><span class="pos">+2.6%</span></td></tr><tr><td>弱勢延續</td><td class="v">3781</td><td class="v"><span class="pos">+1.0%</span> · 54%<span class="n">n=2833</span></td><td class="v"><span class="pos">+2.5%</span> · 52%<span class="n">n=1326</span></td><td class="v"><span class="pos">+3.6%</span> · 46%<span class="n">n=853</span></td><td class="v"><span class="neg">-1.5%</span></td></tr><tr><td>RSI超買</td><td class="v">1221</td><td class="v"><span class="neg">-0.2%</span> · 46%<span class="n">n=1204</span></td><td class="v"><span class="neg">-2.0%</span> · 38%<span class="n">n=1147</span></td><td class="v"><span class="pos">+0.9%</span> · 48%<span class="n">n=686</span></td><td class="v"><span class="pos">+3.1%</span></td></tr><tr><td>RSI超賣</td><td class="v">856</td><td class="v"><span class="pos">+1.5%</span> · 57%<span class="n">n=559</span></td><td class="v"><span class="pos">+4.0%</span> · 58%<span class="n">n=177</span></td><td class="v"><span class="pos">+9.6%</span> · 56%<span class="n">n=109</span></td><td class="v"><span class="neg">-1.0%</span></td></tr><tr><td>創60日新高</td><td class="v">1569</td><td class="v"><span class="pos">+0.3%</span> · 50%<span class="n">n=1549</span></td><td class="v"><span class="neg">-1.4%</span> · 40%<span class="n">n=1437</span></td><td class="v"><span class="pos">+1.1%</span> · 45%<span class="n">n=856</span></td><td class="v"><span class="pos">+2.0%</span></td></tr><tr><td>創60日新低</td><td class="v">1345</td><td class="v"><span class="pos">+0.9%</span> · 54%<span class="n">n=986</span></td><td class="v"><span class="pos">+3.5%</span> · 58%<span class="n">n=462</span></td><td class="v"><span class="pos">+3.9%</span> · 49%<span class="n">n=301</span></td><td class="v"><span class="neg">-2.0%</span></td></tr><tr><td>月線負乖離≥25%</td><td class="v">90</td><td class="v na">—</td><td class="v na">—</td><td class="v na">—</td><td class="v"><span class="pos">+18.8%</span></td></tr><tr><td>月線正乖離≥25%</td><td class="v">0</td><td class="v na">—</td><td class="v na">—</td><td class="v na">—</td><td class="v"><span class="pos">+13.5%</span></td></tr><tr><td>成交量異常</td><td class="v">1355</td><td class="v"><span class="neg">-0.0%</span> · 47%<span class="n">n=1299</span></td><td class="v"><span class="neg">-1.1%</span> · 42%<span class="n">n=1128</span></td><td class="v"><span class="neg">-1.5%</span> · 38%<span class="n">n=629</span></td><td class="v"><span class="pos">+1.0%</span></td></tr><tr><td>週線死亡交叉</td><td class="v">193</td><td class="v"><span class="neg">-0.5%</span> · 46%<span class="n">n=170</span></td><td class="v"><span class="pos">+0.5%</span> · 52%<span class="n">n=113</span></td><td class="v"><span class="pos">+0.1%</span> · 46%<span class="n">n=72</span></td><td class="v"><span class="neg">-0.9%</span></td></tr><tr><td>週線黃金交叉</td><td class="v">108</td><td class="v"><span class="neg">-0.2%</span> · 44%<span class="n">n=108</span></td><td class="v"><span class="neg">-2.1%</span> · 37%<span class="n">n=94</span></td><td class="v"><span class="pos">+1.8%</span> · 44%<span class="n">n=48</span></td><td class="v"><span class="pos">+0.0%</span></td></tr><tr><td>交叉(參考)</td><td class="v">2768</td><td class="v"><span class="pos">+0.2%</span> · 47%<span class="n">n=2705</span></td><td class="v"><span class="neg">-0.4%</span> · 43%<span class="n">n=2447</span></td><td class="v"><span class="neg">-0.8%</span> · 39%<span class="n">n=1394</span></td><td class="v"><span class="neg">-0.2%</span></td></tr></tbody>
+      </table>
+      <p>每格是:平均超額報酬(減掉同期170檔平均)· 勝率(超額報酬>0的比例),n 是已經走完該天數的訊號數;還沒走完的不計入,所以60日要約三個月後才有數字。「回測60日」是2016–2026回測的同一組訊號,用來對照實戰是否一致。樣本少的時候(n<30,或集中在同一兩次大漲大跌)數字會大幅跳動,看方向比看數字重要。前段是從當時的價格重算出來的訊號,之後才是每天實際顯示的訊號。</p>
     </div>
   </details>
 
