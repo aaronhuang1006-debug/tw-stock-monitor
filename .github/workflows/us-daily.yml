@@ -1,0 +1,65 @@
+name: Daily US stock scan
+
+# Nasdaq-100 + PHLX Semiconductor signal board -> docs/us/. Prices from Yahoo Finance (adjusted),
+# one bulk download per run. Normally dispatched right after the US close by a Claude scheduled task;
+# the schedule below is only a fallback (GitHub's own schedules have been running hours late).
+on:
+  schedule:
+    - cron: "47 22 * * 1-5"   # 06:47 Asia/Taipei, Tue-Sat (after the US close)
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Re-run even if the latest US trading day is already published"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: us-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt yfinance lxml
+
+      - name: Use CI settings template
+        run: cp config/settings.ci.yaml config/settings.yaml
+
+      - name: Restore US price cache
+        uses: actions/cache@v4
+        with:
+          path: data/us.db
+          key: us-db-${{ github.run_id }}
+          restore-keys: |
+            us-db-
+
+      - name: Run US scan
+        env:
+          TZ: Asia/Taipei
+        run: python -m src.main_us ${{ (github.event_name == 'workflow_dispatch' && inputs.force == true) && '--force' || '' }}
+
+      - name: Commit board
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/us config/universe_us.json
+          if git diff --cached --quiet; then
+            echo "no changes"
+          else
+            d=$(grep -o 'class="date">[0-9-]*' docs/us/index.html | head -1 | cut -d'>' -f2)
+            git commit -m "Update US daily report (${d})"
+            git pull --rebase origin main
+            git push
+          fi

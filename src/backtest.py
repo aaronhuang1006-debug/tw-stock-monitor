@@ -251,7 +251,13 @@ def main() -> None:
     ap.add_argument("--db", default="data/backtest.db")
     ap.add_argument("--out", default="backtest/results")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--market", choices=["tw", "us"], default="tw")
     args = ap.parse_args()
+    if args.market == "us":  # separate database and output unless given explicitly
+        if args.db == "data/backtest.db":
+            args.db = "data/backtest_us.db"
+        if args.out == "backtest/results":
+            args.out = "backtest/results_us"
 
     started = time.time()
     log = lambda m: print(f"[{time.time() - started:7.1f}s] {m}", flush=True)  # noqa: E731
@@ -260,11 +266,26 @@ def main() -> None:
     ind = cfg["indicators"]
     token = os.environ.get("FINMIND_TOKEN", "") or cfg.get("finmind", {}).get("token", "")
     rph = 550 if token else cfg.get("finmind", {}).get("requests_per_hour", 280)
-    universe = json.load(open(cfg["universe_file"], encoding="utf-8"))["stocks"]
-    if args.limit:
-        universe = universe[: args.limit]
     Path(args.db).parent.mkdir(parents=True, exist_ok=True)
-    conn, source, failed = load_prices(universe, args.start, args.end, args.db, token, rph, log)
+    if args.market == "us":
+        from src import db as dbmod, us_data
+        universe = us_data.refresh_universe(Path("config/universe_us.json"))
+        if args.limit:
+            universe = universe[: args.limit]
+        conn = dbmod.connect(args.db)
+        st = us_data.download(conn, [s["stock_id"] for s in universe], args.start)
+        conn.execute("CREATE TABLE IF NOT EXISTS px (stock_id TEXT, date TEXT, open REAL, high REAL, low REAL,"
+                     " close REAL, volume REAL, PRIMARY KEY (stock_id, date))")
+        conn.execute("DELETE FROM px")
+        conn.execute("INSERT INTO px SELECT stock_id, date, open, high, low, close, volume FROM daily_price")
+        conn.commit()
+        source, failed = "Yahoo Finance (adjusted)", st["missing"]
+        log(f"price source: {source}; {st['ok']} tickers, missing {failed}")
+    else:
+        universe = json.load(open(cfg["universe_file"], encoding="utf-8"))["stocks"]
+        if args.limit:
+            universe = universe[: args.limit]
+        conn, source, failed = load_prices(universe, args.start, args.end, args.db, token, rph, log)
 
     rng = random.Random(7)
     events, closes = [], {}

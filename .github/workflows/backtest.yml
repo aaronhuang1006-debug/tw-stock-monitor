@@ -10,6 +10,11 @@ on:
       start:
         description: "First date of price history"
         default: "2016-01-01"
+      market:
+        description: "tw (FinMind, Taiwan universe) or us (Yahoo, Nasdaq-100 + SOX)"
+        type: choice
+        options: [tw, us]
+        default: tw
   push:
     branches: [main]
     paths:
@@ -26,6 +31,11 @@ concurrency:
 jobs:
   backtest:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # manual runs pick one market; the monthly schedule and pushes refresh both
+        market: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.market)) || fromJSON('["tw","us"]') }}
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +45,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt yfinance lxml
 
       - name: Use CI settings template
         run: cp config/settings.ci.yaml config/settings.yaml
@@ -43,26 +53,26 @@ jobs:
       - name: Restore backtest price cache
         uses: actions/cache@v4
         with:
-          path: data/backtest.db
-          key: backtest-db-${{ github.run_id }}
+          path: ${{ matrix.market == 'us' && 'data/backtest_us.db' || 'data/backtest.db' }}
+          key: backtest-${{ matrix.market == 'us' && 'us-' || '' }}db-${{ github.run_id }}
           restore-keys: |
-            backtest-db-
+            backtest-${{ matrix.market == 'us' && 'us-' || '' }}db-
 
       - name: Run backtest
         env:
           TZ: Asia/Taipei
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python -m src.backtest --start "${{ inputs.start || '2016-01-01' }}"
+        run: python -m src.backtest --market ${{ matrix.market }} --start "${{ inputs.start || '2016-01-01' }}"
 
       - name: Commit results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add backtest/results
+          git add backtest/results backtest/results_us
           if git diff --cached --quiet; then
             echo "no changes"
           else
-            git commit -m "Backtest results ($(date -u +%Y-%m-%d))"
+            git commit -m "Backtest results ${{ matrix.market }} ($(date -u +%Y-%m-%d))"
             git pull --rebase origin main
             git push
           fi

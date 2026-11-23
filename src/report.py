@@ -813,7 +813,7 @@ GUIDE_HTML = f"""
 """
 
 
-def _thermo_html(alerts: list[dict], total: int) -> str:
+def _thermo_html(alerts: list[dict], total: int, note: str | None = None) -> str:
     """Market-wide share of stocks on a daily RSI-oversold reading: a temperature gauge, not a signal."""
     n = len({a["stock_id"] for a in alerts if a["signal"] == "rsi_oversold"})
     share = n / total if total else 0
@@ -825,7 +825,7 @@ def _thermo_html(alerts: list[dict], total: int) -> str:
         lvl, cls = "正常", ""
     return (f'  <div class="thermo"><span>市場溫度計 · 全市場RSI超賣比例</span><b>{share:.0%}</b>'
             f'<span>({n}/{total}檔)</span><span class="lvl {cls}">{lvl}</span>'
-            f'<span class="t-note">{BACKTEST["thermo"]}。</span></div>')
+            f'<span class="t-note">{BACKTEST["thermo"] if note is None else note}。</span></div>')
 
 
 # ---- 我的持股 / 我的關注 (artifact / Pages only) ----
@@ -955,10 +955,73 @@ def _track_html(tracking: dict | None) -> str:
 """
 
 
+WX_TW_NOTE = "<br>回測(2016–2026):週線死叉之後60個交易日平均只輸同期平均0.9%、且只在2021年後成立,金叉約0%。當作中期趨勢的參考,不是買賣訊號。"
+
+
+def _us_guide(results_path: Path, n_universe: int) -> str:
+    """US guide: plain definitions plus the US backtest's 60-day numbers when they exist."""
+    bt = {}
+    try:
+        bt = json.loads(results_path.read_text(encoding="utf-8"))["signals"]
+    except (OSError, ValueError, KeyError):
+        pass
+
+    def line(codes: list[str]) -> str:
+        vals = [bt[c]["60"]["all"] for c in codes if c in bt and bt[c]["60"]["all"].get("n")]
+        if not vals:
+            return "美股回測還沒跑完。"
+        n = sum(v["n"] for v in vals)
+        mean = sum(v["excess_mean"] * v["n"] for v in vals) / n
+        med = sum(v["excess_median"] * v["n"] for v in vals) / n
+        hit = sum(v["hit"] * v["n"] for v in vals) / n
+        return f"美股回測:之後60個交易日平均{mean * 100:+.1f}%、中位數{med * 100:+.1f}%、勝率{hit * 100:.0f}%(n={n})。"
+
+    rows = [
+        ("強勢延續", "var(--rise)", "創新高、RSI超買、突破布林上軌(日線與週線)。", STRONG),
+        ("弱勢延續", "var(--fall)", "創新低、RSI超賣、跌破布林下軌(日線與週線)。", WEAK),
+        ("RSI超買", "", "近14日的漲跌幅裡上漲占七成以上,漲勢一面倒。", ["rsi_overbought"]),
+        ("RSI超賣", "", "近14日的漲跌幅裡下跌占七成以上,跌勢一面倒。", ["rsi_oversold"]),
+        ("月線乖離", "var(--warn)", "收盤價離20日均線多遠,分≥15%、≥25%、≥35%三級;負乖離≥25%:", ["bias_neg_25", "bias_neg_35"]),
+        ("成交量異常", "var(--vol)", "成交量是5日均量的2倍以上。", ["volume_spike"]),
+        ("週線交叉", "", "5週線與20週線交叉,只在週收盤判斷;死叉:", ["wma_death_cross"]),
+        ("參考類", "", "均線、MACD交叉與站上/跌破5日線、月線。", ["ma_golden_cross", "ma_death_cross", "macd_golden_cross", "macd_death_cross"]),
+    ]
+    body = "".join(
+        (f'<dt style="color:{c}">' if c else "<dt>") + f"{t}</dt><dd>{d}{line(codes)}</dd>" for t, c, d, codes in rows)
+    return f"""
+  <details class="guide">
+    <summary>訊號怎麼看(美股)</summary>
+    <div class="guide-body">
+      <dl>{body}</dl>
+      <p>回測方法跟台股版相同:每個訊號之後的報酬減掉同一天{n_universe}檔的平均。美股用還原權息價格,但股票池仍是現在的成分股(事後贏家),強勢訊號可能被高估。台股回測的結論不能直接套用到美股。</p>
+    </div>
+  </details>
+"""
+
+
+MARKET_TW = {
+    "key": "tw", "title": "台股訊號板", "desc": "台灣50與中型100成分股每日技術指標監測,收盤後自動更新",
+    "subhead": "台灣50 + 中型100 成分股 · 每個交易日收盤後自動更新", "universe": "台灣50+中型100",
+    "placeholder": "搜尋代號或名稱(例如 2330 或 台積電),查任一檔目前指標數值", "source": "FinMind",
+}
+MARKET_US = {
+    "key": "us", "title": "美股訊號板", "desc": "Nasdaq-100與費城半導體成分股每日技術指標監測",
+    "subhead": "Nasdaq-100 + 費城半導體成分股 · 美股每個交易日收盤後更新(台灣早上)", "universe": "Nasdaq-100+費半",
+    "placeholder": "搜尋代號或名稱(例如 NVDA 或 Micron),查任一檔目前指標數值", "source": "Yahoo Finance(還原權息價格)",
+}
+
+
 def build_artifact_html(run_date: str, alerts: list[dict], universe: list[dict], news_map: dict | None = None,
                          snapshots: list[dict] | None = None, history: dict | None = None,
-                         series: dict | None = None, tracking: dict | None = None) -> str:
+                         series: dict | None = None, tracking: dict | None = None, market: dict | None = None) -> str:
     """Standalone page matching the published Claude Artifact's design (red=偏多/rise, green=偏空/fall per TWSE convention). The scheduled task reads this file's content and republishes it to the same artifact URL each trading day."""
+    m = market or MARKET_TW
+    us = m["key"] == "us"
+    guide_html = _us_guide(Path(__file__).resolve().parent.parent / "backtest" / "results_us" / "results.json", len(universe)) if us else GUIDE_HTML
+    wx_html = WEEKLY_CROSS_HTML.replace(WX_TW_NOTE, "") if us else WEEKLY_CROSS_HTML
+    lists_js = LISTS_JS.replace("tw-signal-lists", f"{m['key']}-signal-lists")
+    rsi_note = {k: v.split(";")[0] for k, v in RSI_NOTE.items()} if us else RSI_NOTE
+    thermo_note = "美股版的超賣比例門檻沿用台股的分級,尚未用美股資料驗證" if us else None
     narrative = build_market_narrative(alerts, universe, len(universe))
     payload = _build_unified_payload(alerts, universe, news_map, snapshots)
     triggered_count = len({a["stock_id"] for a in alerts if a["signal"] not in NOISY_CODES})
@@ -967,8 +1030,8 @@ def build_artifact_html(run_date: str, alerts: list[dict], universe: list[dict],
     siglabel_json = json.dumps(SIGNAL_SECTION_TITLE, ensure_ascii=False)
     weekday = "日一二三四五六"[__import__("datetime").date.fromisoformat(run_date).isoweekday() % 7]
 
-    return f"""<title>台股訊號板</title>
-<meta name="description" content="台灣50與中型100成分股每日技術指標監測,收盤後自動更新">
+    return f"""<title>{m["title"]}</title>
+<meta name="description" content="{m["desc"]}">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1065,10 +1128,10 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 <div class="wrap">
 {NAV_HTML}
   <div class="masthead">
-    <h1>台股訊號板</h1>
+    <h1>{m["title"]}</h1>
     <span class="date">{run_date}(週{weekday})</span>
   </div>
-  <p class="subhead">台灣50 + 中型100 成分股 · 每個交易日收盤後自動更新</p>
+  <p class="subhead">{m["subhead"]}</p>
   {_summary_html(alerts, universe, len(universe))}
   <div class="stats">
     <div class="stat"><p class="label">監測檔數</p><p class="value">{len(universe)}</p></div>
@@ -1076,17 +1139,17 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
     <div class="stat"><p class="label">強勢延續</p><p class="value rise">{len({a["stock_id"] for a in alerts if a["signal"] in STRONG_SET})}</p></div>
     <div class="stat"><p class="label">弱勢延續</p><p class="value fall">{len({a["stock_id"] for a in alerts if a["signal"] in WEAK_SET})}</p></div>
   </div>
-{_thermo_html(alerts, len(universe))}
-{WEEKLY_CROSS_HTML}
+{_thermo_html(alerts, len(universe), thermo_note)}
+{wx_html}
 {trend_ui.TREND_HTML}
   <div class="search">
-    <input type="text" id="search-input" placeholder="搜尋代號或名稱(例如 2330 或 台積電),查任一檔目前指標數值">
+    <input type="text" id="search-input" placeholder="{m["placeholder"]}">
     <button type="button" id="search-clear">清除</button>
   </div>
 
   <div id="filters" class="filters"></div>
   <p id="list-note" class="list-note" hidden></p>
-{GUIDE_HTML}{_track_html(tracking)}
+{guide_html}{_track_html(tracking)}
   <div id="table-wrap" class="table-wrap">
     <table>
       <thead><tr><th>代號</th><th>名稱</th><th>產業</th><th>觸發訊號 <span class="th-hint">點任一列看個股</span></th></tr></thead>
@@ -1100,9 +1163,9 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
     <span><i class="dot" style="background:var(--fall)"></i>弱勢延續:創新低/RSI超賣/跌破布林下軌(日線與週線)</span>
     <span><i class="dot" style="background:var(--vol)"></i>成交量異常</span>
     <span><i class="dot" style="background:var(--warn)"></i>月線乖離≥15%/25%/35%(紅=漲離、綠=跌離;顏色越深級數越高)</span>
-    <span><i class="dot" style="background:var(--line-strong)"></i>參考:均線/MACD/週線交叉、站上/跌破5日線與月線(回測預測力接近0;5日線不計入觸發檔數)</span>
+    <span><i class="dot" style="background:var(--line-strong)"></i>參考:均線/MACD/週線交叉、站上/跌破5日線與月線({"" if us else "回測預測力接近0;"}5日線不計入觸發檔數)</span>
   </div>
-  <footer>資料來源:FinMind · 指標:MA交叉/收盤穿越5日線與月線/RSI/MACD/布林通道/成交量/新高新低,日線與週線各算一套(週線用5週vs20週、60週新高低,只在週收盤判斷;卡片上週線數值為含本週的暫時值),任一觸發即列入 · 搜尋可查全部{len(universe)}檔目前數值 · 僅供個人參考,非投資建議</footer>
+  <footer>資料來源:{m["source"]} · 指標:MA交叉/收盤穿越5日線與月線/RSI/MACD/布林通道/成交量/新高新低,日線與週線各算一套(週線用5週vs20週、60週新高低,只在週收盤判斷;卡片上週線數值為含本週的暫時值),任一觸發即列入 · 搜尋可查全部{len(universe)}檔目前數值 · 僅供個人參考,非投資建議</footer>
 </div>
 
 <script>
@@ -1115,7 +1178,7 @@ const TREND_METRICS = {json.dumps(TREND_METRICS, ensure_ascii=False)};
 const BULL_CODES = {json.dumps(sorted(BULLISH_SIGNALS))};
 const BEAR_CODES = {json.dumps(sorted(BEARISH_SIGNALS))};
 const NOISY = new Set({json.dumps(sorted(NOISY_CODES))});
-const RSI_NOTE = {json.dumps(RSI_NOTE, ensure_ascii=False)};
+const RSI_NOTE = {json.dumps(rsi_note, ensure_ascii=False)};
 const isCore = s => s.signals.some(g => !NOISY.has(g.code));
 {trend_ui.TREND_JS}
 {_SEARCH_SCRIPT}
@@ -1174,7 +1237,7 @@ function render() {{
   if (!visible.length) {{
     emptyMsg.style.display = "block";
     emptyMsg.textContent = searching
-      ? `查無「${{searchQuery}}」相關股票(僅收錄台灣50+中型100共{len(universe)}檔)`
+      ? `查無「${{searchQuery}}」相關股票(僅收錄{m["universe"]}共{len(universe)}檔)`
       : (activeFilter === "hold" || activeFilter === "watch") ? `${{LIST_LABEL[activeFilter]}}還是空的。`
       : "今日無觸發訊號。";
   }} else {{
@@ -1210,7 +1273,7 @@ document.getElementById("search-input").addEventListener("input", (e) => {{
 }});
 document.getElementById("search-clear").addEventListener("click", () => {{ navTo({{ q: "", f: activeFilter }}); }});
 {NAV_JS}
-{LISTS_JS}
+{lists_js}
 renderTrend();
 renderWeeklyCross();
 render();
