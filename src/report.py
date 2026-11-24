@@ -993,9 +993,9 @@ def _track_html(tracking: dict | None, n_universe: int = 170) -> str:
         ep, nd = st.get("episodes"), st.get("dates")
         if ep is not None:
             # consecutive days of one sell-off are one event: trust follows the number of separate episodes
-            level = "低" if ep < 4 or st["n"] < 30 else "中" if ep < 10 else "高"
+            level = "低" if ep < 6 or st["n"] < 30 else "中" if ep < 15 else "高"
             cls_r = "warn" if level == "低" else "ok" if level == "高" else ""
-            meta.append(f'<span class="{cls_r}">可信度{level}(來自{ep}段行情、{nd}個交易日、{st["n"]}次)</span>')
+            meta.append(f'<span class="{cls_r}">可信度{level}(只算得上{ep}段互不重疊的行情;{st["n"]}次訊號)</span>')
         cards.append(f'<div class="tk-card"><div class="tk-head"><span class="tk-name">{g["label"]}</span>'
                      f'<span class="tk-pill {cls}">{text}</span></div><p class="tk-say">{say}</p>'
                      f'<div class="tk-bar" title="跟大盤比 {m:+.1f}%(長條滿格=±10%)"><i style="{pos};background:{color}"></i></div>'
@@ -1017,7 +1017,7 @@ def _track_html(tracking: dict | None, n_universe: int = 170) -> str:
   <details class="guide">
     <summary>實戰追蹤(自 {tracking['since']} 起的真實訊號)</summary>
     <div class="guide-body">
-      <p class="tk-intro">每張卡片回答一個問題:這個訊號出現後,那檔股票有沒有比大盤({n_universe}檔平均)強?「跑贏」是指比大盤強,不一定是上漲:大盤跌10%、它只跌5%,也算跑贏。長條往右(紅)是平均跑贏、往左(綠)是跑輸,滿格代表10%。可信度看訊號來自幾段不同的行情:同一波大跌連續好幾天、幾十檔一起觸發,只能算同一件事;相隔不到一週的訊號日算同一段。</p>
+      <p class="tk-intro">每張卡片回答一個問題:這個訊號出現後,那檔股票有沒有比大盤({n_universe}檔平均)強?「跑贏」是指比大盤強,不一定是上漲:大盤跌10%、它只跌5%,也算跑贏。長條往右(紅)是平均跑贏、往左(綠)是跑輸,滿格代表10%。可信度看的不是訊號次數,而是有幾段互不重疊的行情:同一波大跌連續好幾天、幾十檔一起觸發,其實只算一件事。累積到15段以上才算「高」,目前追蹤才半年,大多還是「低」。</p>
       <div class="tk-grid">{''.join(cards)}</div>
       <details class="tk-raw"><summary>看完整數字</summary><div class="tbl"><table>
         <thead><tr><th>訊號</th><th>出現次數</th><th>5日後</th><th>20日後</th><th>60日後</th><th>回測60日</th></tr></thead>

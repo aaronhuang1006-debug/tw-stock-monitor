@@ -64,23 +64,25 @@ def _closes(conn, stock_ids: list[str], start: str) -> pd.DataFrame:
     return df.pivot_table(index="date", columns="stock_id", values="close").sort_index()
 
 
-def _stats(x: np.ndarray, dates: list[str] | None = None) -> dict:
+def _stats(x: np.ndarray, dates: list[str] | None = None, horizon: int = 20) -> dict:
     keep = ~np.isnan(x)
     x = x[keep]
     if not len(x):
         return {"n": 0}
     out = {"n": int(len(x)), "mean": round(float(x.mean()), 5), "median": round(float(np.median(x)), 5),
            "hit": round(float((x > 0).mean()), 4)}
-    if dates is not None:  # signals cluster: count distinct days, and runs of days a week or less apart
+    if dates is not None:
+        # Signals cluster (one sell-off fires many stocks for days) and 20-day windows overlap, so the
+        # honest sample size is the number of non-overlapping horizon-long stretches that contain signals.
         days = sorted({d for d, k in zip(dates, keep) if k})
         out["dates"] = len(days)
-        eps, prev = 0, None
+        span = datetime.timedelta(days=max(7, round(horizon * 1.45)))  # trading days -> calendar days
+        blocks, start = 0, None
         for d in days:
             cur = datetime.date.fromisoformat(d)
-            if prev is None or (cur - prev).days > 7:
-                eps += 1
-            prev = cur
-        out["episodes"] = eps
+            if start is None or cur - start >= span:
+                blocks, start = blocks + 1, cur
+        out["episodes"] = blocks
     return out
 
 
@@ -131,7 +133,7 @@ def compute(conn, log: dict, stock_ids: list[str], backtest_path: Path | None = 
         out = {"fired": sum(fired.get(c, 0) for c in code_list)}
         for h in HORIZONS:
             pairs = [p for c in code_list for p in rows.get(c, {}).get(h, [])]
-            out[str(h)] = _stats(np.array([v for v, _ in pairs], dtype=float), [d for _, d in pairs])
+            out[str(h)] = _stats(np.array([v for v, _ in pairs], dtype=float), [d for _, d in pairs], h)
         return out
 
     expect = {}
