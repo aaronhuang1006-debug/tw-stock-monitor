@@ -12,7 +12,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src import db, history, indicators, report, screener, tracking, us_data  # noqa: E402
+from src import breadth, db, history, indicators, report, screener, tracking, us_data  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "us"
@@ -92,8 +92,16 @@ def main() -> None:
     except Exception as exc:  # noqa: BLE001
         print(f"[us-tracking] skipped: {exc}", file=sys.stderr)
 
+    breadth_data = None
+    try:
+        bench = us_data.benchmark("QQQ", start)
+        breadth_data = breadth.compute(conn, [s["stock_id"] for s in universe], effective_date, bench, "QQQ")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[us-breadth] skipped: {exc}", file=sys.stderr)
+
     page = report.build_artifact_html(effective_date, alerts, universe, None, snapshots, hist,
-                                      history.build_series(tails), track, market=report.MARKET_US)
+                                      history.build_series(tails), track, market=report.MARKET_US,
+                                      breadth=breadth_data)
     (OUT / "index.html").write_text(page, encoding="utf-8")
     print(f"[us] {effective_date}: {len(snapshots)} 檔, {len(alerts)} 個訊號, 回補 {added} 天", file=sys.stderr)
 

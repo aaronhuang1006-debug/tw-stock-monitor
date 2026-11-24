@@ -24,8 +24,8 @@ HORIZONS = (5, 20, 60)
 
 # Groups shown on the board (label, codes); codes not listed still get their own row in the JSON.
 GROUPS = [
-    ("強勢延續", ["w_new_high", "new_high", "w_rsi_overbought", "rsi_overbought", "w_bb_breakout_upper", "bb_breakout_upper"]),
-    ("弱勢延續", ["w_new_low", "new_low", "w_rsi_oversold", "rsi_oversold", "w_bb_breakout_lower", "bb_breakout_lower"]),
+    ("強勢趨勢", ["w_new_high", "new_high", "w_rsi_overbought", "rsi_overbought", "w_bb_breakout_upper", "bb_breakout_upper"]),
+    ("弱勢趨勢", ["w_new_low", "new_low", "w_rsi_oversold", "rsi_oversold", "w_bb_breakout_lower", "bb_breakout_lower"]),
     ("RSI超買", ["rsi_overbought"]),
     ("RSI超賣", ["rsi_oversold"]),
     ("創60日新高", ["new_high"]),

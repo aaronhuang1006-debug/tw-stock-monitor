@@ -1,14 +1,16 @@
 import argparse
+import datetime
 import json
 import os
 import sys
 from pathlib import Path
 
+import pandas as pd
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src import db, fetch_data, history, indicators, screener, report, notify_telegram, tracking  # noqa: E402
+from src import breadth, db, fetch_data, history, indicators, screener, report, notify_telegram, tracking  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -182,10 +184,23 @@ def main() -> None:
     except Exception as exc:  # noqa: BLE001 - tracking must never block the daily report
         print(f"[tracking] skipped: {exc}", file=sys.stderr)
     series = history.build_series(tails)
+    breadth_data = None
+    try:  # breadth never blocks the report; the benchmark costs one FinMind request
+        bench = None
+        try:
+            start = (datetime.date.fromisoformat(effective_date) - datetime.timedelta(days=60)).isoformat()
+            rows = fetch_data.fetch_stock_price("0050", start, effective_date, token=cfg["finmind"]["token"])
+            bench = pd.Series({r["date"]: r["close"] for r in rows if r.get("close")})
+        except Exception as exc:  # noqa: BLE001
+            print(f"[breadth] 0050 unavailable: {exc}", file=sys.stderr)
+        breadth_data = breadth.compute(conn, [s["stock_id"] for s in universe], effective_date, bench, "0050")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[breadth] skipped: {exc}", file=sys.stderr)
     csv_path = report.write_csv_report(str(ROOT / cfg["report_dir"]), effective_date, all_alerts)
     html_path = report.write_html_report(str(ROOT / cfg["report_dir"]), effective_date, all_alerts, universe, news_map, all_snapshots)
     artifact_path = report.write_artifact_source(str(ROOT / cfg["report_dir"]), effective_date, all_alerts, universe, news_map, all_snapshots,
-                                              history=hist, series=series, tracking=track)
+                                              history=hist, series=series, tracking=track,
+                                              breadth=breadth_data)
     summary = report.build_summary_text(effective_date, all_alerts, fetch_stats, universe)
 
     # Stable path for GitHub Pages (docs/ on main) — overwritten every run,

@@ -112,13 +112,14 @@ FILTER_CATEGORIES = {
 }
 
 ARTIFACT_CATEGORIES = {
-    "strong": {"label": "強勢延續", "codes": STRONG, "varBg": "--rise-soft", "varText": "--rise"},
-    "weak": {"label": "弱勢延續", "codes": WEAK, "varBg": "--fall-soft", "varText": "--fall"},
+    "strong": {"label": "強勢趨勢", "codes": STRONG, "varBg": "--rise-soft", "varText": "--rise"},
+    "weak": {"label": "弱勢趨勢", "codes": WEAK, "varBg": "--fall-soft", "varText": "--fall"},
     "overbought": {"label": "RSI超買(漲勢一面倒)", "codes": ["rsi_overbought", "w_rsi_overbought"], "varBg": "--rise-soft", "varText": "--rise"},
     "oversold": {"label": "RSI超賣(跌勢一面倒)", "codes": ["rsi_oversold", "w_rsi_oversold"], "varBg": "--fall-soft", "varText": "--fall"},
     "volume": {"label": "成交量異常", "codes": ["volume_spike", "w_volume_spike"], "varBg": "--vol-soft", "varText": "--vol"},
-    "bias": {"label": "月線乖離≥15%", "codes": BIAS_CODES, "varBg": "--warn-soft", "varText": "--warn"},
-    "wprov": {"label": "週線(本週暫定)", "codes": WP_CODES, "varBg": "--bg", "varText": "--ink-soft"},
+    "bias": {"label": "月線負乖離≥15%", "codes": BIAS_NEG, "varBg": "--warn-soft", "varText": "--warn"},
+    "biaspos": {"label": "月線正乖離(參考)", "codes": BIAS_POS, "varBg": "--bg", "varText": "--ink-soft"},
+    "wprov": {"label": "週線暫定(參考)", "codes": WP_CODES, "varBg": "--bg", "varText": "--ink-soft"},
     "cross": {"label": "交叉(參考)", "codes": CROSS, "varBg": "--bg", "varText": "--ink-soft"},
     "ma20": {"label": "月線(參考)", "codes": MA20_POS, "varBg": "--bg", "varText": "--ink-soft"},
     "ma5": {"label": "5日線(參考)", "codes": MA5_POS, "varBg": "--bg", "varText": "--ink-soft"},
@@ -128,8 +129,8 @@ ARTIFACT_CATEGORIES = {
 TREND_METRICS = [
     {"key": "all", "label": "觸發檔數", "series": [{"name": "觸發", "codes": [c for c in SIGNAL_ORDER if c not in MA_POS_CODES and c not in WP_CODES], "color": "--accent"}]},
     {"key": "bs", "label": "強勢 vs 弱勢", "series": [
-        {"name": "強勢延續", "codes": STRONG, "color": "--rise"},
-        {"name": "弱勢延續", "codes": WEAK, "color": "--fall", "dash": "6 4"}]},
+        {"name": "強勢趨勢", "codes": STRONG, "color": "--rise"},
+        {"name": "弱勢趨勢", "codes": WEAK, "color": "--fall", "dash": "6 4"}]},
     {"key": "rsi", "label": "RSI 超買 vs 超賣", "note": "超買=近14日漲勢一面倒,超賣=跌勢一面倒。全市場超賣檔數暴增通常出現在急跌時。", "series": [
         {"name": "超買(漲勢一面倒)", "codes": ["rsi_overbought", "w_rsi_overbought"], "color": "--rise"},
         {"name": "超賣(跌勢一面倒)", "codes": ["rsi_oversold", "w_rsi_oversold"], "color": "--fall", "dash": "6 4"}]},
@@ -192,7 +193,7 @@ def build_summary_rows(alerts: list[dict], universe: list[dict], total_universe:
         tone = "整體偏弱"
     else:
         tone = "強弱互見"
-    rows = [("強弱", f"強勢延續 {len(strong)} 檔{top_ind(strong) if strong else ''}・弱勢延續 {len(weak)} 檔{top_ind(weak) if weak else ''}")]
+    rows = [("強弱", f"強勢趨勢 {len(strong)} 檔{top_ind(strong) if strong else ''}・弱勢趨勢 {len(weak)} 檔{top_ind(weak) if weak else ''}")]
 
     ob, os_ = ids({"rsi_overbought"}), ids({"rsi_oversold"})
     share = len(os_) / total_universe if total_universe else 0
@@ -792,6 +793,7 @@ GUIDE_CSS = """
 .guide-body dt { font-weight: 600; color: var(--ink); }
 .guide-body dd { margin: 0; min-width: 0; }
 .guide-body p { margin: 10px 0 0; font-size: 12px; color: var(--ink-faint); }
+.guide-body p.tier-note { margin: 0 0 10px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
 @media (max-width: 560px) { .guide-body dl { grid-template-columns: 1fr; } .guide-body dd { margin-bottom: 6px; } }
 """
 
@@ -799,9 +801,10 @@ GUIDE_HTML = f"""
   <details class="guide">
     <summary>訊號怎麼看(回測 {BACKTEST['period']})</summary>
     <div class="guide-body">
+      <p class="tier-note">訊號依回測證據分兩層。<b>核心</b>:強勢/弱勢趨勢、RSI超買/超賣、月線負乖離、成交量異常,十年回測有可測的差異。<b>參考</b>(篩選鈕上標「參考」):月線正乖離、各種交叉、週線暫定、5日線/月線,回測沒有優勢或樣本不可靠,只用來掌握盤面。訊號名稱只描述<em>現在</em>的狀態,不是預測;它之後怎麼走,看下面的回測和「實戰追蹤」。</p>
       <dl>
-        <dt style="color:var(--rise)">強勢延續</dt><dd>{BACKTEST['strong']}。強的股票傾向繼續強。</dd>
-        <dt style="color:var(--fall)">弱勢延續</dt><dd>{BACKTEST['weak']}。弱的股票傾向繼續弱;跟著大盤一起跌時創新低的訊號較弱,大盤在漲卻創新低的才是真警訊。</dd>
+        <dt style="color:var(--rise)">強勢趨勢</dt><dd>{BACKTEST['strong']}。十年回測裡,強的股票傾向繼續強;但近半年實戰追蹤的結果相反,見「實戰追蹤」。</dd>
+        <dt style="color:var(--fall)">弱勢趨勢</dt><dd>{BACKTEST['weak']}。弱的股票傾向繼續弱;跟著大盤一起跌時創新低的訊號較弱,大盤在漲卻創新低的才是真警訊。</dd>
         <dt>RSI超買</dt><dd>近14日的漲跌幅裡,上漲占了七成以上,也就是漲勢一面倒。名稱聽起來像「漲過頭該賣」,但回測顯示之後多半續強,不是賣訊。</dd>
         <dt>RSI超賣</dt><dd>近14日的漲跌幅裡,下跌占了七成以上,也就是跌勢一面倒。名稱聽起來像「跌過頭該買」,但回測顯示之後多半續弱,不是買訊;同時創新低的更弱。</dd>
         <dt style="color:var(--warn)">月線乖離</dt><dd>收盤價離20日均線(月線)多遠:(收盤÷月線−1)。分≥15%、≥25%、≥35%三級,正值代表漲離月線、負值代表跌離月線;每天只要還在範圍內就會列出,不是只在穿越那天。回測:正乖離之後平均報酬很高,但中位數接近0、勝率約五成,是少數大漲股拉高平均,一般情況沒有優勢;負乖離≥25%之後60個交易日中位數贏同期平均約8~12%、勝率67~80%,但只來自約120個交易日(集中在幾次大跌),而且股票池是事後的成分股,跌了沒回來的股票已被剔除,反彈幅度一定被高估。</dd>
@@ -813,6 +816,95 @@ GUIDE_HTML = f"""
     </div>
   </details>
 """
+
+
+BREADTH_CSS = """
+.breadth { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 0 0 16px; box-shadow: var(--shadow); }
+.br-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.br-title { font-weight: 600; font-size: 14px; color: var(--ink); }
+.br-read { font-size: 13px; color: var(--ink-soft); }
+.br-read b { color: var(--ink); }
+.br-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.br-tile { background: var(--bg); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.br-tile .l { font-size: 12px; color: var(--ink-soft); }
+.br-tile .v { font-family: "IBM Plex Mono", monospace; font-size: 18px; white-space: nowrap; font-weight: 500; color: var(--ink); line-height: 1.3; }
+.br-tile .v small { font-size: 12px; color: var(--ink-faint); font-weight: 400; margin-left: 4px; }
+.br-tile .d { font-size: 11.5px; color: var(--ink-faint); }
+.br-tile .up { color: var(--rise); } .br-tile .dn { color: var(--fall); }
+.br-chart { margin-top: 10px; }
+.br-chart svg { display: block; width: 100%; height: 70px; }
+.br-legend { display: flex; gap: 12px; font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; flex-wrap: wrap; }
+.br-legend i { display: inline-block; width: 14px; height: 2px; vertical-align: 3px; margin-right: 4px; }
+.br-note { font-size: 11.5px; color: var(--ink-faint); margin: 8px 0 0; line-height: 1.6; }
+"""
+
+
+def _breadth_html(b: dict | None, alerts: list[dict], m: dict) -> str:
+    """市場廣度: read this before individual signals. Thresholds are descriptive, not backtested yet."""
+    if not b or b.get("above60") is None:
+        return ""
+    n = b["n"] or 1
+    hi = len({a["stock_id"] for a in alerts if a["signal"] == "new_high"}) / n
+    lo = len({a["stock_id"] for a in alerts if a["signal"] == "new_low"}) / n
+    a20, a60 = b["above20"], b["above60"]
+
+    def chg(cur, prev):
+        if prev is None:
+            return ""
+        d = (cur - prev) * 100
+        cls = "up" if d > 0 else "dn" if d < 0 else ""
+        return f'<div class="d">20天前 {prev:.0%},<span class="{cls}">{d:+.0f} 個百分點</span></div>'
+
+    if a60 >= 0.6:
+        struct = "<b>多數股票在季線之上</b>(多頭結構)"
+    elif a60 <= 0.4:
+        struct = "<b>多數股票跌破季線</b>(空頭結構)"
+    else:
+        struct = "<b>站上與跌破季線的股票各半</b>(結構分歧)"
+    prev60 = b.get("above60_prev")
+    trend = ""
+    if prev60 is not None:
+        d = a60 - prev60
+        trend = ",比20天前明顯改善" if d >= 0.15 else ",比20天前明顯轉弱" if d <= -0.15 else ""
+    lead = ""
+    tiles = [
+        f'<div class="br-tile"><div class="l">站上月線(20日)</div><div class="v">{a20:.0%}</div>{chg(a20, b.get("above20_prev"))}</div>',
+        f'<div class="br-tile"><div class="l">站上季線(60日)</div><div class="v">{a60:.0%}</div>{chg(a60, prev60)}</div>',
+        f'<div class="br-tile"><div class="l">創60日新高 / 新低</div><div class="v"><span class="up">{hi:.0%}</span>'
+        f'<small>/</small> <span class="dn">{lo:.0%}</span></div><div class="d">占全部{n}檔</div></div>',
+    ]
+    if b.get("bench20") is not None:
+        bn, md = b["bench20"], b["med20"]
+        gap = bn - md
+        if gap >= 0.03:
+            lead = f";近一個月<b>漲勢集中在權值股</b>({b['bench_name']}比一般股票多{gap * 100:.0f}個百分點)"
+        elif gap <= -0.03:
+            lead = f";近一個月<b>一般股票比權值股強</b>({-gap * 100:.0f}個百分點)"
+        tiles.append(f'<div class="br-tile"><div class="l">近20日:{b["bench_name"]} vs 一般股票</div>'
+                     f'<div class="v"><span class="{"up" if bn >= 0 else "dn"}">{bn:+.1%}</span><small>vs</small> '
+                     f'<span class="{"up" if md >= 0 else "dn"}">{md:+.1%}</span></div>'
+                     f'<div class="d">一般股票={n}檔報酬的中位數</div></div>')
+
+    ser = b.get("series") or {}
+    chart = ""
+    if len(ser.get("dates", [])) > 5:
+        w, h, k = 600, 70, len(ser["dates"]) - 1
+
+        def path(vals):
+            return " ".join(f"{'M' if i == 0 else 'L'}{i / k * w:.1f},{h - v * h:.1f}" for i, v in enumerate(vals))
+        chart = (f'<div class="br-chart"><svg viewBox="0 0 {w} {h}" preserveAspectRatio="none" role="img" '
+                 f'aria-label="站上月線與季線比例,近{k + 1}個交易日">'
+                 f'<line x1="0" x2="{w}" y1="{h / 2}" y2="{h / 2}" stroke="var(--line-strong)" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>'
+                 f'<path d="{path(ser["above20"])}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/>'
+                 f'<path d="{path(ser["above60"])}" fill="none" stroke="var(--warn)" stroke-width="2" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>'
+                 f'</svg><div class="br-legend"><span><i style="background:var(--accent)"></i>站上月線</span>'
+                 f'<span><i style="background:var(--warn)"></i>站上季線</span><span>虛線=50%</span>'
+                 f'<span>{ser["dates"][0]} ~ {ser["dates"][-1]}</span></div></div>')
+    return (f'  <section class="breadth"><div class="br-head"><span class="br-title">市場廣度 · 先看大環境</span>'
+            f'<span class="br-read">{struct}{trend}{lead}。</span></div>'
+            f'<div class="br-grid">{"".join(tiles)}</div>{chart}'
+            f'<p class="br-note">同一個訊號在不同環境下意義不同,所以先看這裡再看個股。「多頭/空頭結構」只是描述目前狀態'
+            f'(站上季線比例≥60%/≤40%),這些門檻還沒用回測驗證過,下一階段會用十年資料檢驗。</p></section>')
 
 
 def _thermo_html(alerts: list[dict], total: int, note: str | None = None) -> str:
@@ -1080,8 +1172,8 @@ def _us_guide(results_path: Path, n_universe: int) -> str:
         return f"美股回測:之後60個交易日平均{mean * 100:+.1f}%、中位數{med * 100:+.1f}%、勝率{hit * 100:.0f}%(n={n})。"
 
     rows = [
-        ("強勢延續", "var(--rise)", "創新高、RSI超買、突破布林上軌(日線與週線)。", STRONG),
-        ("弱勢延續", "var(--fall)", "創新低、RSI超賣、跌破布林下軌(日線與週線)。", WEAK),
+        ("強勢趨勢", "var(--rise)", "創新高、RSI超買、突破布林上軌(日線與週線)。", STRONG),
+        ("弱勢趨勢", "var(--fall)", "創新低、RSI超賣、跌破布林下軌(日線與週線)。", WEAK),
         ("RSI超買", "", "近14日的漲跌幅裡上漲占七成以上,漲勢一面倒。", ["rsi_overbought"]),
         ("RSI超賣", "", "近14日的漲跌幅裡下跌占七成以上,跌勢一面倒。", ["rsi_oversold"]),
         ("月線乖離", "var(--warn)", "收盤價離20日均線多遠,分≥15%、≥25%、≥35%三級;負乖離≥25%:", ["bias_neg_25", "bias_neg_35"]),
@@ -1116,7 +1208,8 @@ MARKET_US = {
 
 def build_artifact_html(run_date: str, alerts: list[dict], universe: list[dict], news_map: dict | None = None,
                          snapshots: list[dict] | None = None, history: dict | None = None,
-                         series: dict | None = None, tracking: dict | None = None, market: dict | None = None) -> str:
+                         series: dict | None = None, tracking: dict | None = None, market: dict | None = None,
+                         breadth: dict | None = None) -> str:
     """Standalone page matching the published Claude Artifact's design (red=偏多/rise, green=偏空/fall per TWSE convention). The scheduled task reads this file's content and republishes it to the same artifact URL each trading day."""
     m = market or MARKET_TW
     us = m["key"] == "us"
@@ -1226,6 +1319,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 {LISTS_CSS}
 {TRACK_CSS}
 {SUMMARY_CSS}
+{BREADTH_CSS}
 </style>
 
 <div class="wrap">
@@ -1236,11 +1330,12 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
   </div>
   <p class="subhead">{m["subhead"]}</p>
   {_summary_html(alerts, universe, len(universe))}
+{_breadth_html(breadth, alerts, m)}
   <div class="stats">
     <div class="stat"><p class="label">監測檔數</p><p class="value">{len(universe)}</p></div>
     <div class="stat"><p class="label">觸發訊號</p><p class="value">{triggered_count}</p></div>
-    <div class="stat"><p class="label">強勢延續</p><p class="value rise">{len({a["stock_id"] for a in alerts if a["signal"] in STRONG_SET})}</p></div>
-    <div class="stat"><p class="label">弱勢延續</p><p class="value fall">{len({a["stock_id"] for a in alerts if a["signal"] in WEAK_SET})}</p></div>
+    <div class="stat"><p class="label">強勢趨勢</p><p class="value rise">{len({a["stock_id"] for a in alerts if a["signal"] in STRONG_SET})}</p></div>
+    <div class="stat"><p class="label">弱勢趨勢</p><p class="value fall">{len({a["stock_id"] for a in alerts if a["signal"] in WEAK_SET})}</p></div>
   </div>
 {_thermo_html(alerts, len(universe), thermo_note)}
 {wx_html}
@@ -1262,8 +1357,8 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
   <div id="cards" class="cards" style="display:none"></div>
   <p id="empty-msg"></p>
   <div class="legend">
-    <span><i class="dot" style="background:var(--rise)"></i>強勢延續:創新高/RSI超買/突破布林上軌(日線與週線)</span>
-    <span><i class="dot" style="background:var(--fall)"></i>弱勢延續:創新低/RSI超賣/跌破布林下軌(日線與週線)</span>
+    <span><i class="dot" style="background:var(--rise)"></i>強勢趨勢:創新高/RSI超買/突破布林上軌(日線與週線)</span>
+    <span><i class="dot" style="background:var(--fall)"></i>弱勢趨勢:創新低/RSI超賣/跌破布林下軌(日線與週線)</span>
     <span><i class="dot" style="background:var(--vol)"></i>成交量異常</span>
     <span><i class="dot" style="background:var(--warn)"></i>月線乖離≥15%/25%/35%(紅=漲離、綠=跌離;顏色越深級數越高)</span>
     <span><i class="dot" style="background:var(--line-strong)"></i>參考:均線/MACD/週線交叉、站上/跌破5日線與月線({"" if us else "回測預測力接近0;"}5日線不計入觸發檔數)</span>
@@ -1386,10 +1481,12 @@ render();
 
 def write_artifact_source(report_dir: str, run_date: str, alerts: list[dict], universe: list[dict],
                            news_map: dict | None = None, snapshots: list[dict] | None = None,
-                           history: dict | None = None, series: dict | None = None, tracking: dict | None = None) -> str:
+                           history: dict | None = None, series: dict | None = None, tracking: dict | None = None,
+                           breadth: dict | None = None) -> str:
     Path(report_dir).mkdir(parents=True, exist_ok=True)
     path = Path(report_dir) / f"{run_date}_artifact.html"
-    path.write_text(build_artifact_html(run_date, alerts, universe, news_map, snapshots, history, series, tracking), encoding="utf-8")
+    path.write_text(build_artifact_html(run_date, alerts, universe, news_map, snapshots, history, series, tracking,
+                                        breadth=breadth), encoding="utf-8")
     return str(path)
 
 

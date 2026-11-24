@@ -90,3 +90,15 @@ def download(conn: sqlite3.Connection, tickers: list[str], start: str) -> dict:
         rows)
     conn.commit()
     return {"ok": ok, "missing": missing, "rows": len(rows)}
+
+
+def benchmark(ticker: str, start: str) -> pd.Series:
+    """Adjusted closes of a benchmark ETF (e.g. QQQ), date -> close; kept out of daily_price."""
+    import yfinance as yf
+
+    d = yf.download(ticker, start=start, auto_adjust=True, progress=False)
+    close = d["Close"]
+    if isinstance(close, pd.DataFrame):
+        close = close.iloc[:, 0]
+    close = close.dropna()
+    return pd.Series(close.to_numpy(), index=[i.strftime("%Y-%m-%d") for i in close.index])
