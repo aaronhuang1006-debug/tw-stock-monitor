@@ -877,9 +877,10 @@ def _breadth_html(b: dict | None, alerts: list[dict], m: dict) -> str:
         bn, md = b["bench20"], b["med20"]
         gap = bn - md
         if gap >= 0.03:
-            lead = f";近一個月<b>漲勢集中在權值股</b>({b['bench_name']}比一般股票多{gap * 100:.0f}個百分點)"
+            lead = (f";近一個月<b>權值股比一般股票強</b>({b['bench_name']} {bn:+.1%} vs 一般股票 {md:+.1%}"
+                    + (",漲勢集中在少數大型股)" if bn > 0 and md <= 0.01 else ")"))
         elif gap <= -0.03:
-            lead = f";近一個月<b>一般股票比權值股強</b>({-gap * 100:.0f}個百分點)"
+            lead = f";近一個月<b>一般股票比權值股強</b>(一般股票 {md:+.1%} vs {b['bench_name']} {bn:+.1%})"
         tiles.append(f'<div class="br-tile"><div class="l">近20日:{b["bench_name"]} vs 一般股票</div>'
                      f'<div class="v"><span class="{"up" if bn >= 0 else "dn"}">{bn:+.1%}</span><small>vs</small> '
                      f'<span class="{"up" if md >= 0 else "dn"}">{md:+.1%}</span></div>'
