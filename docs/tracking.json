@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-24T13:47:50+00:00",
+ "generated": "2026-11-24T13:49:05+00:00",
  "since": "2026-05-29",
  "last": "2026-11-24",
  "seeded_from_history": true,
@@ -20,21 +20,24 @@
     "mean": 0.00154,
     "median": -0.00121,
     "hit": 0.49,
-    "dates": 116
+    "dates": 116,
+    "episodes": 1
    },
    "20": {
     "n": 5023,
     "mean": -0.01312,
     "median": -0.01917,
     "hit": 0.4075,
-    "dates": 101
+    "dates": 101,
+    "episodes": 1
    },
    "60": {
     "n": 2924,
     "mean": 0.00871,
     "median": -0.0173,
     "hit": 0.4555,
-    "dates": 61
+    "dates": 61,
+    "episodes": 1
    },
    "backtest60": 0.02595
   },
@@ -54,21 +57,24 @@
     "mean": 0.00993,
     "median": 0.00541,
     "hit": 0.5389,
-    "dates": 111
+    "dates": 111,
+    "episodes": 1
    },
    "20": {
     "n": 1354,
     "mean": 0.02468,
     "median": 0.00449,
     "hit": 0.5266,
-    "dates": 96
+    "dates": 96,
+    "episodes": 1
    },
    "60": {
     "n": 853,
     "mean": 0.03636,
     "median": -0.01498,
     "hit": 0.4642,
-    "dates": 57
+    "dates": 57,
+    "episodes": 1
    },
    "backtest60": -0.01481
   },
@@ -83,21 +89,24 @@
     "mean": -0.00177,
     "median": -0.00597,
     "hit": 0.4635,
-    "dates": 116
+    "dates": 116,
+    "episodes": 1
    },
    "20": {
     "n": 1157,
     "mean": -0.01894,
     "median": -0.02268,
     "hit": 0.3881,
-    "dates": 101
+    "dates": 101,
+    "episodes": 1
    },
    "60": {
     "n": 692,
     "mean": 0.00808,
     "median": -0.00744,
     "hit": 0.4827,
-    "dates": 61
+    "dates": 61,
+    "episodes": 1
    },
    "backtest60": 0.03131
   },
@@ -112,21 +121,24 @@
     "mean": 0.01358,
     "median": 0.00934,
     "hit": 0.5662,
-    "dates": 81
+    "dates": 81,
+    "episodes": 3
    },
    "20": {
     "n": 182,
     "mean": 0.04112,
     "median": 0.01773,
     "hit": 0.5879,
-    "dates": 66
+    "dates": 66,
+    "episodes": 3
    },
    "60": {
     "n": 109,
     "mean": 0.09552,
     "median": 0.02778,
     "hit": 0.5596,
-    "dates": 34
+    "dates": 34,
+    "episodes": 2
    },
    "backtest60": -0.01041
   },
@@ -141,21 +153,24 @@
     "mean": 0.00285,
     "median": -0.00081,
     "hit": 0.4955,
-    "dates": 116
+    "dates": 116,
+    "episodes": 1
    },
    "20": {
     "n": 1458,
     "mean": -0.01292,
     "median": -0.01918,
     "hit": 0.4053,
-    "dates": 101
+    "dates": 101,
+    "episodes": 1
    },
    "60": {
     "n": 864,
     "mean": 0.01106,
     "median": -0.01914,
     "hit": 0.4479,
-    "dates": 61
+    "dates": 61,
+    "episodes": 1
    },
    "backtest60": 0.02016
   },
@@ -170,21 +185,24 @@
     "mean": 0.00855,
     "median": 0.00496,
     "hit": 0.5334,
-    "dates": 95
+    "dates": 95,
+    "episodes": 2
    },
    "20": {
     "n": 469,
     "mean": 0.03469,
     "median": 0.01621,
     "hit": 0.5778,
-    "dates": 80
+    "dates": 80,
+    "episodes": 2
    },
    "60": {
     "n": 301,
     "mean": 0.03936,
     "median": -0.00991,
     "hit": 0.4917,
-    "dates": 44
+    "dates": 44,
+    "episodes": 2
    },
    "backtest60": -0.02042
   },
@@ -235,21 +253,24 @@
     "mean": -0.00051,
     "median": -0.00318,
     "hit": 0.4724,
-    "dates": 114
+    "dates": 114,
+    "episodes": 1
    },
    "20": {
     "n": 1152,
     "mean": -0.01012,
     "median": -0.01886,
     "hit": 0.4236,
-    "dates": 100
+    "dates": 100,
+    "episodes": 1
    },
    "60": {
     "n": 633,
     "mean": -0.01459,
     "median": -0.04254,
     "hit": 0.3807,
-    "dates": 61
+    "dates": 61,
+    "episodes": 1
    },
    "backtest60": 0.00965
   },
@@ -264,21 +285,24 @@
     "mean": -0.00513,
     "median": -0.00362,
     "hit": 0.4647,
-    "dates": 25
+    "dates": 25,
+    "episodes": 6
    },
    "20": {
     "n": 116,
     "mean": 0.00814,
     "median": 0.01255,
     "hit": 0.5345,
-    "dates": 22
+    "dates": 22,
+    "episodes": 6
    },
    "60": {
     "n": 72,
     "mean": 0.00139,
     "median": -0.02374,
     "hit": 0.4583,
-    "dates": 13
+    "dates": 13,
+    "episodes": 3
    },
    "backtest60": -0.00869
   },
@@ -293,21 +317,24 @@
     "mean": -0.00225,
     "median": -0.0042,
     "hit": 0.4352,
-    "dates": 25
+    "dates": 25,
+    "episodes": 6
    },
    "20": {
     "n": 101,
     "mean": -0.02207,
     "median": -0.0277,
     "hit": 0.3762,
-    "dates": 22
+    "dates": 22,
+    "episodes": 6
    },
    "60": {
     "n": 48,
     "mean": 0.01776,
     "median": -0.02211,
     "hit": 0.4375,
-    "dates": 13
+    "dates": 13,
+    "episodes": 3
    },
    "backtest60": 0.0002
   },
@@ -325,21 +352,24 @@
     "mean": 0.00254,
     "median": -0.00315,
     "hit": 0.4742,
-    "dates": 116
+    "dates": 116,
+    "episodes": 1
    },
    "20": {
     "n": 2465,
     "mean": -0.00334,
     "median": -0.01459,
     "hit": 0.4304,
-    "dates": 101
+    "dates": 101,
+    "episodes": 1
    },
    "60": {
     "n": 1411,
     "mean": -0.00814,
     "median": -0.03885,
     "hit": 0.394,
-    "dates": 61
+    "dates": 61,
+    "episodes": 1
    },
    "backtest60": -0.0023
   }
@@ -352,21 +382,24 @@
     "mean": -0.00177,
     "median": -0.00597,
     "hit": 0.4635,
-    "dates": 116
+    "dates": 116,
+    "episodes": 1
    },
    "20": {
     "n": 1157,
     "mean": -0.01894,
     "median": -0.02268,
     "hit": 0.3881,
-    "dates": 101
+    "dates": 101,
+    "episodes": 1
    },
    "60": {
     "n": 692,
     "mean": 0.00808,
     "median": -0.00744,
     "hit": 0.4827,
-    "dates": 61
+    "dates": 61,
+    "episodes": 1
    }
   },
   "bb_breakout_upper": {
@@ -376,21 +409,24 @@
     "mean": 0.0021,
     "median": -0.0011,
     "hit": 0.4916,
-    "dates": 112
+    "dates": 112,
+    "episodes": 1
    },
    "20": {
     "n": 1195,
     "mean": -0.01411,
     "median": -0.02043,
     "hit": 0.4042,
-    "dates": 101
+    "dates": 101,
+    "episodes": 1
    },
    "60": {
     "n": 600,
     "mean": 0.00422,
     "median": -0.02211,
     "hit": 0.4283,
-    "dates": 61
+    "dates": 61,
+    "episodes": 1
    }
   },
   "new_high": {
@@ -400,21 +436,24 @@
     "mean": 0.00285,
     "median": -0.00081,
     "hit": 0.4955,
-    "dates": 116
+    "dates": 116,
+    "episodes": 1
    },
    "20": {
     "n": 1458,
     "mean": -0.01292,
     "median": -0.01918,
     "hit": 0.4053,
-    "dates": 101
+    "dates": 101,
+    "episodes": 1
    },
    "60": {
     "n": 864,
     "mean": 0.01106,
     "median": -0.01914,
     "hit": 0.4479,
-    "dates": 61
+    "dates": 61,
+    "episodes": 1
    }
   },
   "volume_spike": {
@@ -424,21 +463,24 @@
     "mean": -0.00051,
     "median": -0.00318,
     "hit": 0.4724,
-    "dates": 114
+    "dates": 114,
+    "episodes": 1
    },
    "20": {
     "n": 1152,
     "mean": -0.01012,
     "median": -0.01886,
     "hit": 0.4236,
-    "dates": 100
+    "dates": 100,
+    "episodes": 1
    },
    "60": {
     "n": 633,
     "mean": -0.01459,
     "median": -0.04254,
     "hit": 0.3807,
-    "dates": 61
+    "dates": 61,
+    "episodes": 1
    }
   },
   "macd_death_cross": {
@@ -448,21 +490,24 @@
     "mean": 0.00044,
     "median": -0.00733,
     "hit": 0.4517,
-    "dates": 110
+    "dates": 110,
+    "episodes": 1
    },
    "20": {
     "n": 692,
     "mean": -0.00743,
     "median": -0.0169,
     "hit": 0.4061,
-    "dates": 98
+    "dates": 98,
+    "episodes": 1
    },
    "60": {
     "n": 381,
     "mean": -0.00421,
     "median": -0.03473,
     "hit": 0.4042,
-    "dates": 58
+    "dates": 58,
+    "episodes": 1
    }
   },
   "macd_golden_cross": {
@@ -472,21 +517,24 @@
     "mean": 0.00604,
     "median": -0.00173,
     "hit": 0.4864,
-    "dates": 105
+    "dates": 105,
+    "episodes": 1
    },
    "20": {
     "n": 645,
     "mean": -0.00129,
     "median": -0.01297,
     "hit": 0.445,
-    "dates": 93
+    "dates": 93,
+    "episodes": 1
    },
    "60": {
     "n": 379,
     "mean": -0.01205,
     "median": -0.03962,
     "hit": 0.3879,
-    "dates": 57
+    "dates": 57,
+    "episodes": 1
    }
   },
   "ma_golden_cross": {
@@ -496,21 +544,24 @@
     "mean": 0.00869,
     "median": 0.00162,
     "hit": 0.5175,
-    "dates": 102
+    "dates": 102,
+    "episodes": 1
    },
    "20": {
     "n": 536,
     "mean": 0.00031,
     "median": -0.0114,
     "hit": 0.4478,
-    "dates": 93
+    "dates": 93,
+    "episodes": 1
    },
    "60": {
     "n": 323,
     "mean": -0.02098,
     "median": -0.04487,
     "hit": 0.3777,
-    "dates": 53
+    "dates": 53,
+    "episodes": 1
    }
   },
   "new_low": {
@@ -520,21 +571,24 @@
     "mean": 0.00855,
     "median": 0.00496,
     "hit": 0.5334,
-    "dates": 95
+    "dates": 95,
+    "episodes": 2
    },
    "20": {
     "n": 469,
     "mean": 0.03469,
     "median": 0.01621,
     "hit": 0.5778,
-    "dates": 80
+    "dates": 80,
+    "episodes": 2
    },
    "60": {
     "n": 301,
     "mean": 0.03936,
     "median": -0.00991,
     "hit": 0.4917,
-    "dates": 44
+    "dates": 44,
+    "episodes": 2
    }
   },
   "ma_death_cross": {
@@ -544,21 +598,24 @@
     "mean": -0.00392,
     "median": -0.00597,
     "hit": 0.4506,
-    "dates": 107
+    "dates": 107,
+    "episodes": 1
    },
    "20": {
     "n": 592,
     "mean": -0.00409,
     "median": -0.01794,
     "hit": 0.4274,
-    "dates": 95
+    "dates": 95,
+    "episodes": 1
    },
    "60": {
     "n": 328,
     "mean": 0.00446,
     "median": -0.03597,
     "hit": 0.4055,
-    "dates": 57
+    "dates": 57,
+    "episodes": 1
    }
   },
   "rsi_oversold": {
@@ -568,21 +625,24 @@
     "mean": 0.01358,
     "median": 0.00934,
     "hit": 0.5662,
-    "dates": 81
+    "dates": 81,
+    "episodes": 3
    },
    "20": {
     "n": 182,
     "mean": 0.04112,
     "median": 0.01773,
     "hit": 0.5879,
-    "dates": 66
+    "dates": 66,
+    "episodes": 3
    },
    "60": {
     "n": 109,
     "mean": 0.09552,
     "median": 0.02778,
     "hit": 0.5596,
-    "dates": 34
+    "dates": 34,
+    "episodes": 2
    }
   },
   "bb_breakout_lower": {
@@ -592,21 +652,24 @@
     "mean": 0.00961,
     "median": 0.00266,
     "hit": 0.5222,
-    "dates": 95
+    "dates": 95,
+    "episodes": 1
    },
    "20": {
     "n": 616,
     "mean": 0.01239,
     "median": -0.0108,
     "hit": 0.4594,
-    "dates": 80
+    "dates": 80,
+    "episodes": 1
    },
    "60": {
     "n": 409,
     "mean": 0.01932,
     "median": -0.03054,
     "hit": 0.4205,
-    "dates": 46
+    "dates": 46,
+    "episodes": 1
    }
   },
   "w_rsi_overbought": {
@@ -616,21 +679,24 @@
     "mean": -0.00072,
     "median": -0.00121,
     "hit": 0.4853,
-    "dates": 25
+    "dates": 25,
+    "episodes": 6
    },
    "20": {
     "n": 689,
     "mean": -0.01176,
     "median": -0.01506,
     "hit": 0.4253,
-    "dates": 22
+    "dates": 22,
+    "episodes": 6
    },
    "60": {
     "n": 506,
     "mean": 0.00114,
     "median": -0.02118,
     "hit": 0.4368,
-    "dates": 13
+    "dates": 13,
+    "episodes": 3
    }
   },
   "w_bb_breakout_upper": {
@@ -640,21 +706,24 @@
     "mean": 0.00115,
     "median": 0.00053,
     "hit": 0.5027,
-    "dates": 25
+    "dates": 25,
+    "episodes": 6
    },
    "20": {
     "n": 352,
     "mean": -0.00943,
     "median": -0.02473,
     "hit": 0.4091,
-    "dates": 22
+    "dates": 22,
+    "episodes": 6
    },
    "60": {
     "n": 262,
     "mean": 0.02753,
     "median": 0.00542,
     "hit": 0.5076,
-    "dates": 13
+    "dates": 13,
+    "episodes": 3
    }
   },
   "wma_golden_cross": {
@@ -664,21 +733,24 @@
     "mean": -0.00225,
     "median": -0.0042,
     "hit": 0.4352,
-    "dates": 25
+    "dates": 25,
+    "episodes": 6
    },
    "20": {
     "n": 101,
     "mean": -0.02207,
     "median": -0.0277,
     "hit": 0.3762,
-    "dates": 22
+    "dates": 22,
+    "episodes": 6
    },
    "60": {
     "n": 48,
     "mean": 0.01776,
     "median": -0.02211,
     "hit": 0.4375,
-    "dates": 13
+    "dates": 13,
+    "episodes": 3
    }
   },
   "w_macd_golden_cross": {
@@ -688,21 +760,24 @@
     "mean": 0.00468,
     "median": 0.00078,
     "hit": 0.5156,
-    "dates": 22
+    "dates": 22,
+    "episodes": 9
    },
    "20": {
     "n": 119,
     "mean": 0.01254,
     "median": -0.0058,
     "hit": 0.4538,
-    "dates": 19
+    "dates": 19,
+    "episodes": 9
    },
    "60": {
     "n": 57,
     "mean": 0.03849,
     "median": -0.00241,
     "hit": 0.4912,
-    "dates": 11
+    "dates": 11,
+    "episodes": 5
    }
   },
   "w_macd_death_cross": {
@@ -712,21 +787,24 @@
     "mean": 0.00893,
     "median": 0.00208,
     "hit": 0.5138,
-    "dates": 24
+    "dates": 24,
+    "episodes": 6
    },
    "20": {
     "n": 169,
     "mean": 0.02107,
     "median": 0.00594,
     "hit": 0.5325,
-    "dates": 21
+    "dates": 21,
+    "episodes": 6
    },
    "60": {
     "n": 111,
     "mean": 0.0167,
     "median": -0.03248,
     "hit": 0.4054,
-    "dates": 12
+    "dates": 12,
+    "episodes": 3
    }
   },
   "w_volume_spike": {
@@ -736,21 +814,24 @@
     "mean": -0.00752,
     "median": -0.00136,
     "hit": 0.494,
-    "dates": 25
+    "dates": 25,
+    "episodes": 6
    },
    "20": {
     "n": 197,
     "mean": -0.01328,
     "median": -0.02626,
     "hit": 0.4061,
-    "dates": 22
+    "dates": 22,
+    "episodes": 6
    },
    "60": {
     "n": 123,
     "mean": -0.02529,
     "median": -0.04932,
     "hit": 0.3333,
-    "dates": 13
+    "dates": 13,
+    "episodes": 3
    }
   },
   "wma_death_cross": {
@@ -760,21 +841,24 @@
     "mean": -0.00513,
     "median": -0.00362,
     "hit": 0.4647,
-    "dates": 25
+    "dates": 25,
+    "episodes": 6
    },
    "20": {
     "n": 116,
     "mean": 0.00814,
     "median": 0.01255,
     "hit": 0.5345,
-    "dates": 22
+    "dates": 22,
+    "episodes": 6
    },
    "60": {
     "n": 72,
     "mean": 0.00139,
     "median": -0.02374,
     "hit": 0.4583,
-    "dates": 13
+    "dates": 13,
+    "episodes": 3
    }
   },
   "w_rsi_oversold": {
@@ -784,21 +868,24 @@
     "mean": 0.01275,
     "median": 0.01191,
     "hit": 0.6596,
-    "dates": 24
+    "dates": 24,
+    "episodes": 6
    },
    "20": {
     "n": 31,
     "mean": 0.01776,
     "median": 0.01871,
     "hit": 0.5484,
-    "dates": 18
+    "dates": 18,
+    "episodes": 7
    },
    "60": {
     "n": 16,
     "mean": -0.02957,
     "median": -0.03598,
     "hit": 0.25,
-    "dates": 8
+    "dates": 8,
+    "episodes": 4
    }
   },
   "w_bb_breakout_lower": {
@@ -808,21 +895,24 @@
     "mean": 0.01198,
     "median": 0.01597,
     "hit": 0.595,
-    "dates": 16
+    "dates": 16,
+    "episodes": 7
    },
    "20": {
     "n": 31,
     "mean": 0.03878,
     "median": 0.039,
     "hit": 0.7097,
-    "dates": 13
+    "dates": 13,
+    "episodes": 7
    },
    "60": {
     "n": 18,
     "mean": 0.07365,
     "median": 0.02483,
     "hit": 0.6111,
-    "dates": 6
+    "dates": 6,
+    "episodes": 3
    }
   },
   "w_new_high": {
@@ -832,14 +922,16 @@
     "mean": 0.01708,
     "median": 0.01568,
     "hit": 0.5928,
-    "dates": 10
+    "dates": 10,
+    "episodes": 4
    },
    "20": {
     "n": 172,
     "mean": 0.01822,
     "median": 0.00259,
     "hit": 0.5058,
-    "dates": 7
+    "dates": 7,
+    "episodes": 4
    },
    "60": {
     "n": 0
@@ -852,14 +944,16 @@
     "mean": -0.00548,
     "median": -0.01004,
     "hit": 0.44,
-    "dates": 10
+    "dates": 10,
+    "episodes": 4
    },
    "20": {
     "n": 25,
     "mean": 0.01132,
     "median": 0.01671,
     "hit": 0.52,
-    "dates": 7
+    "dates": 7,
+    "episodes": 4
    },
    "60": {
     "n": 0
@@ -872,7 +966,8 @@
     "mean": 0.00496,
     "median": 0.00999,
     "hit": 0.5526,
-    "dates": 5
+    "dates": 5,
+    "episodes": 1
    },
    "20": {
     "n": 0
@@ -888,7 +983,8 @@
     "mean": 0.02167,
     "median": 0.04009,
     "hit": 0.6613,
-    "dates": 5
+    "dates": 5,
+    "episodes": 1
    },
    "20": {
     "n": 0
@@ -904,7 +1000,8 @@
     "mean": -0.01735,
     "median": -0.00658,
     "hit": 0.462,
-    "dates": 5
+    "dates": 5,
+    "episodes": 1
    },
    "20": {
     "n": 0
@@ -920,7 +1017,8 @@
     "mean": -0.0011,
     "median": 0.00095,
     "hit": 0.5,
-    "dates": 4
+    "dates": 4,
+    "episodes": 1
    },
    "20": {
     "n": 0
