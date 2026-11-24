@@ -71,8 +71,16 @@ def _stats(x: np.ndarray, dates: list[str] | None = None) -> dict:
         return {"n": 0}
     out = {"n": int(len(x)), "mean": round(float(x.mean()), 5), "median": round(float(np.median(x)), 5),
            "hit": round(float((x > 0).mean()), 4)}
-    if dates is not None:  # how many different trading days the signals came from (they cluster)
-        out["dates"] = len({d for d, k in zip(dates, keep) if k})
+    if dates is not None:  # signals cluster: count distinct days, and runs of days a week or less apart
+        days = sorted({d for d, k in zip(dates, keep) if k})
+        out["dates"] = len(days)
+        eps, prev = 0, None
+        for d in days:
+            cur = datetime.date.fromisoformat(d)
+            if prev is None or (cur - prev).days > 7:
+                eps += 1
+            prev = cur
+        out["episodes"] = eps
     return out
 
 
