@@ -964,8 +964,9 @@ def _track_html(tracking: dict | None, n_universe: int = 170) -> str:
         st = g.get(h) or {}
         if not st.get("n"):
             cards.append(f'<div class="tk-card"><div class="tk-head"><span class="tk-name">{g["label"]}</span>'
-                         f'<span class="tk-pill">還沒有結果</span></div><p class="tk-say">出現過 {g["fired"]} 次,'
-                         f'但都還沒滿 5 個交易日,過幾天才算得出來。</p></div>')
+                         f'<span class="tk-pill">還沒有結果</span></div><p class="tk-say">'
+                         + (f'出現過 {g["fired"]} 次,但都還沒滿 5 個交易日,過幾天才算得出來。' if g["fired"]
+                            else '追蹤以來還沒出現過。') + '</p></div>')
             continue
         text, cls = _verdict(st)
         m, hit = st["mean"] * 100, st["hit"] * 100
