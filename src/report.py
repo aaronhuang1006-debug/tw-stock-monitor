@@ -910,48 +910,118 @@ listsFromLocal();
 
 
 TRACK_CSS = """
-.track-body { overflow-x: auto; }
-.track-body table { min-width: 560px; font-size: 12.5px; }
-.track-body th, .track-body td { padding: 6px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
-.track-body th:first-child, .track-body td:first-child { text-align: left; }
-.track-body td.v { font-family: "IBM Plex Mono", monospace; }
-.track-body td.v .n { color: var(--ink-faint); font-size: 11px; margin-left: 4px; }
-.track-body .pos { color: var(--rise); }
-.track-body .neg { color: var(--fall); }
-.track-body .na { color: var(--ink-faint); }
+.tk-intro { margin: 0 0 12px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
+.tk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.tk-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--paper); min-width: 0; }
+.tk-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.tk-name { font-weight: 600; font-size: 14px; color: var(--ink); }
+.tk-pill { font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--bg); color: var(--ink-soft); white-space: nowrap; }
+.tk-pill.up { background: var(--rise-soft); color: var(--rise); }
+.tk-pill.down { background: var(--fall-soft); color: var(--fall); }
+.tk-pill.mixed { background: var(--warn-soft); color: var(--warn); }
+.tk-say { font-size: 13px; color: var(--ink); line-height: 1.6; margin: 0 0 8px; }
+.tk-say b { font-family: "IBM Plex Mono", monospace; }
+.tk-bar { position: relative; height: 10px; background: var(--bg); border-radius: 5px; margin: 4px 0 8px; }
+.tk-bar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line-strong); }
+.tk-bar i { position: absolute; top: 0; bottom: 0; border-radius: 5px; }
+.tk-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; color: var(--ink-faint); }
+.tk-meta .ok { color: var(--ink-soft); }
+.tk-meta .warn { color: var(--warn); }
+.tk-raw { margin-top: 12px; }
+.tk-raw .tbl { overflow-x: auto; }
+.tk-raw table { min-width: 560px; font-size: 12.5px; }
+.tk-raw th, .tk-raw td { padding: 6px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+.tk-raw th:first-child, .tk-raw td:first-child { text-align: left; }
+.tk-raw td.v { font-family: "IBM Plex Mono", monospace; }
+.tk-raw .n { color: var(--ink-faint); font-size: 11px; margin-left: 4px; }
+.tk-raw .pos { color: var(--rise); }
+.tk-raw .neg { color: var(--fall); }
+.tk-raw .na { color: var(--ink-faint); }
 """
 
 
-def _track_html(tracking: dict | None) -> str:
-    """實戰追蹤: real signals since the log started, scored by excess return vs the universe."""
+def _verdict(st: dict) -> tuple[str, str]:
+    """Plain-language reading of one horizon's numbers: (text, css class)."""
+    m, h = st["mean"], st["hit"]
+    if m >= 0.005 and h >= 0.52:
+        return "之後多半跑贏大盤", "up"
+    if m <= -0.005 and h <= 0.48:
+        return "之後多半跑輸大盤", "down"
+    if m >= 0.005:
+        return "多數小輸、少數大贏", "mixed"
+    if m <= -0.005:
+        return "多數小贏、少數大輸", "mixed"
+    return "跟大盤差不多", ""
+
+
+def _track_html(tracking: dict | None, n_universe: int = 170) -> str:
+    """實戰追蹤 as cards: a plain verdict, a bar for how far above/below the market, and how much to trust it."""
     if not tracking or not tracking.get("groups"):
         return ""
+    cards = []
+    for g in tracking["groups"]:
+        h = "20" if (g.get("20") or {}).get("n", 0) >= 10 else "5"
+        st = g.get(h) or {}
+        if not st.get("n"):
+            cards.append(f'<div class="tk-card"><div class="tk-head"><span class="tk-name">{g["label"]}</span>'
+                         f'<span class="tk-pill">還沒有結果</span></div><p class="tk-say">出現過 {g["fired"]} 次,'
+                         f'但都還沒滿 5 個交易日,過幾天才算得出來。</p></div>')
+            continue
+        text, cls = _verdict(st)
+        m, hit = st["mean"] * 100, st["hit"] * 100
+        days = "20 個交易日(約一個月)" if h == "20" else "5 個交易日(約一週)"
+        say = (f"出現後 {days},有 <b>{hit:.0f}%</b> 的次數跑贏大盤,"
+               f"平均比大盤{'強' if m >= 0 else '弱'} <b>{abs(m):.1f}%</b>。")
+        width = min(abs(m), 10) / 10 * 50
+        color = "var(--rise)" if m >= 0 else "var(--fall)"
+        pos = f"left:50%;width:{width:.1f}%" if m >= 0 else f"left:{50 - width:.1f}%;width:{width:.1f}%"
+        meta = []
+        s60 = g.get("60") or {}
+        if s60.get("n", 0) >= 10 and h != "60":
+            meta.append(f'<span>三個月後:比大盤{"強" if s60["mean"] >= 0 else "弱"}{abs(s60["mean"]) * 100:.1f}%,{s60["hit"] * 100:.0f}%跑贏</span>')
+        bt = g.get("backtest60")
+        if bt is not None:
+            has60 = s60.get("n", 0) >= 10
+            ref = s60["mean"] if has60 else st["mean"]
+            span = "三個月後的方向" if has60 else "目前的方向"
+            if abs(bt) < 0.005:
+                meta.append('<span>10年回測:三個月後沒有方向</span>')
+            elif (bt > 0) == (ref > 0):
+                meta.append(f'<span class="ok">{span}跟10年回測一致</span>')
+            else:
+                meta.append(f'<span class="warn">{span}跟10年回測相反</span>')
+        nd = st.get("dates")
+        if nd is not None:
+            level = "低" if nd < 10 or st["n"] < 30 else "中" if nd < 40 else "高"
+            cls_r = "warn" if level == "低" else "ok" if level == "高" else ""
+            meta.append(f'<span class="{cls_r}">可信度{level}(來自{nd}個交易日、{st["n"]}次)</span>')
+        cards.append(f'<div class="tk-card"><div class="tk-head"><span class="tk-name">{g["label"]}</span>'
+                     f'<span class="tk-pill {cls}">{text}</span></div><p class="tk-say">{say}</p>'
+                     f'<div class="tk-bar" title="跟大盤比 {m:+.1f}%(長條滿格=±10%)"><i style="{pos};background:{color}"></i></div>'
+                     f'<div class="tk-meta">{"".join(meta)}</div></div>')
 
-    def cell(st: dict, min_n: int = 30) -> str:
+    def cell(st: dict | None) -> str:
         if not st or not st.get("n"):
             return '<td class="v na">—</td>'
-        m = st["mean"] * 100
-        cls = "pos" if m > 0 else "neg"
-        thin = ' title="樣本少於30,參考價值低"' if st["n"] < min_n else ""
-        return (f'<td class="v"{thin}><span class="{cls}">{m:+.1f}%</span> · {st["hit"] * 100:.0f}%'
+        mm = st["mean"] * 100
+        return (f'<td class="v"><span class="{"pos" if mm > 0 else "neg"}">{mm:+.1f}%</span> · {st["hit"] * 100:.0f}%'
                 f'<span class="n">n={st["n"]}</span></td>')
-
     rows = []
     for g in tracking["groups"]:
         bt = g.get("backtest60")
         bt_cell = f'<td class="v"><span class="{"pos" if bt > 0 else "neg"}">{bt * 100:+.1f}%</span></td>' if bt is not None else '<td class="v na">—</td>'
-        rows.append(f'<tr><td>{g["label"]}</td><td class="v">{g["fired"]}</td>'
-                    f'{cell(g.get("5"))}{cell(g.get("20"))}{cell(g.get("60"))}{bt_cell}</tr>')
-    seeded = "前段是從當時的價格重算出來的訊號,之後才是每天實際顯示的訊號。" if tracking.get("seeded_from_history") else ""
+        rows.append(f'<tr><td>{g["label"]}</td><td class="v">{g["fired"]}</td>{cell(g.get("5"))}{cell(g.get("20"))}{cell(g.get("60"))}{bt_cell}</tr>')
+    seeded = "前段是用當時價格重算出來的訊號,之後才是每天實際顯示的訊號。" if tracking.get("seeded_from_history") else ""
     return f"""
   <details class="guide">
     <summary>實戰追蹤(自 {tracking['since']} 起的真實訊號)</summary>
-    <div class="guide-body track-body">
-      <table>
+    <div class="guide-body">
+      <p class="tk-intro">每張卡片回答一個問題:這個訊號出現後,那檔股票有沒有比大盤({n_universe}檔平均)強?「跑贏」是指比大盤強,不一定是上漲:大盤跌10%、它只跌5%,也算跑贏。長條往右(紅)是平均跑贏、往左(綠)是跑輸,滿格代表10%。可信度看訊號來自幾個不同的交易日:同一天大跌時幾十檔一起觸發,只能算同一件事。</p>
+      <div class="tk-grid">{''.join(cards)}</div>
+      <details class="tk-raw"><summary>看完整數字</summary><div class="tbl"><table>
         <thead><tr><th>訊號</th><th>出現次數</th><th>5日後</th><th>20日後</th><th>60日後</th><th>回測60日</th></tr></thead>
-        <tbody>{''.join(rows)}</tbody>
-      </table>
-      <p>每格是:平均超額報酬(減掉同期170檔平均)· 勝率(超額報酬>0的比例),n 是已經走完該天數的訊號數;還沒走完的不計入,所以60日要約三個月後才有數字。「回測60日」是2016–2026回測的同一組訊號,用來對照實戰是否一致。樣本少的時候(n<30,或集中在同一兩次大漲大跌)數字會大幅跳動,看方向比看數字重要。{seeded}</p>
+        <tbody>{''.join(rows)}</tbody></table></div>
+        <p>格式:平均超額報酬 · 勝率(跑贏大盤的比例),n=已滿該天數的次數。{seeded}</p></details>
     </div>
   </details>
 """
@@ -1151,7 +1221,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 
   <div id="filters" class="filters"></div>
   <p id="list-note" class="list-note" hidden></p>
-{guide_html}{_track_html(tracking)}
+{guide_html}{_track_html(tracking, len(universe))}
   <div id="table-wrap" class="table-wrap">
     <table>
       <thead><tr><th>代號</th><th>名稱</th><th>產業</th><th>觸發訊號 <span class="th-hint">點任一列看個股</span></th></tr></thead>

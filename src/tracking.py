@@ -64,12 +64,16 @@ def _closes(conn, stock_ids: list[str], start: str) -> pd.DataFrame:
     return df.pivot_table(index="date", columns="stock_id", values="close").sort_index()
 
 
-def _stats(x: np.ndarray) -> dict:
-    x = x[~np.isnan(x)]
+def _stats(x: np.ndarray, dates: list[str] | None = None) -> dict:
+    keep = ~np.isnan(x)
+    x = x[keep]
     if not len(x):
         return {"n": 0}
-    return {"n": int(len(x)), "mean": round(float(x.mean()), 5), "median": round(float(np.median(x)), 5),
-            "hit": round(float((x > 0).mean()), 4)}
+    out = {"n": int(len(x)), "mean": round(float(x.mean()), 5), "median": round(float(np.median(x)), 5),
+           "hit": round(float((x > 0).mean()), 4)}
+    if dates is not None:  # how many different trading days the signals came from (they cluster)
+        out["dates"] = len({d for d, k in zip(dates, keep) if k})
+    return out
 
 
 def compute(conn, log: dict, stock_ids: list[str], backtest_path: Path | None = None) -> dict:
@@ -110,7 +114,7 @@ def compute(conn, log: dict, stock_ids: list[str], backtest_path: Path | None = 
                 for h in HORIZONS:
                     v = exc[h].at[d, sid]
                     if pd.notna(v):
-                        rows[c][h].append(float(v))
+                        rows[c][h].append((float(v), d))
                         done = True
                 if not done:
                     pending[c] += 1
@@ -118,8 +122,8 @@ def compute(conn, log: dict, stock_ids: list[str], backtest_path: Path | None = 
     def block(code_list: list[str]) -> dict:
         out = {"fired": sum(fired.get(c, 0) for c in code_list)}
         for h in HORIZONS:
-            vals = np.array([v for c in code_list for v in rows.get(c, {}).get(h, [])], dtype=float)
-            out[str(h)] = _stats(vals)
+            pairs = [p for c in code_list for p in rows.get(c, {}).get(h, [])]
+            out[str(h)] = _stats(np.array([v for v, _ in pairs], dtype=float), [d for _, d in pairs])
         return out
 
     expect = {}
