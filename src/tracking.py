@@ -91,7 +91,7 @@ def compute(conn, log: dict, stock_ids: list[str], backtest_path: Path | None = 
     if not days:
         return {}
     start = days[0]["d"]
-    px = _closes(conn, stock_ids, (datetime.date.fromisoformat(start) - datetime.timedelta(days=10)).isoformat())
+    px = _closes(conn, stock_ids, (datetime.date.fromisoformat(start) - datetime.timedelta(days=100)).isoformat())
     if px.empty:
         return {}
     ret1 = px / px.shift(1) - 1
@@ -104,6 +104,9 @@ def compute(conn, log: dict, stock_ids: list[str], backtest_path: Path | None = 
         r = r.mask(broken)
         fwd[h] = r
         exc[h] = r.sub(r.mean(axis=1), axis=0)
+    # market backdrop on each day, same rule as the backtest: equal-weight universe trailing 60-day return
+    trail = (px / px.shift(60) - 1).mean(axis=1)
+    regime = {d: ("up" if v > 0 else "down") for d, v in trail.items() if pd.notna(v)}
 
     codes = log["codes"]
     rows = {c: {h: [] for h in HORIZONS} for c in codes}
@@ -124,7 +127,7 @@ def compute(conn, log: dict, stock_ids: list[str], backtest_path: Path | None = 
                 for h in HORIZONS:
                     v = exc[h].at[d, sid]
                     if pd.notna(v):
-                        rows[c][h].append((float(v), d))
+                        rows[c][h].append((float(v), d, regime.get(d)))
                         done = True
                 if not done:
                     pending[c] += 1
@@ -133,10 +136,14 @@ def compute(conn, log: dict, stock_ids: list[str], backtest_path: Path | None = 
         out = {"fired": sum(fired.get(c, 0) for c in code_list)}
         for h in HORIZONS:
             pairs = [p for c in code_list for p in rows.get(c, {}).get(h, [])]
-            out[str(h)] = _stats(np.array([v for v, _ in pairs], dtype=float), [d for _, d in pairs], h)
+            out[str(h)] = _stats(np.array([v for v, _, _ in pairs], dtype=float), [d for _, d, _ in pairs], h)
+            for rg in ("down", "up"):
+                sub = [(v, d) for v, d, r in pairs if r == rg]
+                out.setdefault("regime", {}).setdefault(rg, {})[str(h)] = _stats(
+                    np.array([v for v, _ in sub], dtype=float), [d for _, d in sub], h)
         return out
 
-    expect = {}
+    expect, expect_rg = {}, {}
     if backtest_path and backtest_path.exists():
         try:
             bt = json.loads(backtest_path.read_text(encoding="utf-8"))["signals"]
@@ -145,6 +152,13 @@ def compute(conn, log: dict, stock_ids: list[str], backtest_path: Path | None = 
                 if vals:  # event-weighted average of the backtest's 60-day excess means
                     n = sum(v["n"] for v in vals)
                     expect[label] = round(sum(v["excess_mean"] * v["n"] for v in vals) / n, 5)
+                for rg in ("down", "up"):
+                    for h in HORIZONS:
+                        vals = [bt[c][str(h)][rg] for c in cl if c in bt and bt[c][str(h)].get(rg, {}).get("n")]
+                        if vals:
+                            n = sum(v["n"] for v in vals)
+                            expect_rg.setdefault(label, {}).setdefault(rg, {})[str(h)] = round(
+                                sum(v["excess_mean"] * v["n"] for v in vals) / n, 5)
         except (KeyError, ValueError, OSError):
             pass
 
@@ -153,6 +167,7 @@ def compute(conn, log: dict, stock_ids: list[str], backtest_path: Path | None = 
         "since": start,
         "last": days[-1]["d"],
         "seeded_from_history": bool(log.get("seeded_from_history")),
-        "groups": [{"label": label, "codes": cl, **block(cl), "backtest60": expect.get(label)} for label, cl in GROUPS],
+        "groups": [{"label": label, "codes": cl, **block(cl), "backtest60": expect.get(label),
+                    "backtest_regime": expect_rg.get(label)} for label, cl in GROUPS],
         "codes": {c: block([c]) for c in codes},
     }

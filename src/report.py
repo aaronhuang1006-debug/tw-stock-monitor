@@ -927,6 +927,15 @@ TRACK_CSS = """
 .tk-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; color: var(--ink-faint); }
 .tk-meta .ok { color: var(--ink-soft); }
 .tk-meta .warn { color: var(--warn); }
+.tk-split { margin: 0 0 8px; padding: 6px 8px; background: var(--bg); border-radius: 6px; font-size: 12px; }
+.tk-rg { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; line-height: 1.7; }
+.tk-rg .k { color: var(--ink-soft); min-width: 5.5em; }
+.tk-rg .v { color: var(--ink); }
+.tk-rg .pos { color: var(--rise); font-weight: 600; }
+.tk-rg .neg { color: var(--fall); font-weight: 600; }
+.tk-rg .na, .tk-rg .n { color: var(--ink-faint); }
+.tk-rg .n { margin-left: 2px; font-size: 11px; }
+.tk-rg .ref { margin-left: auto; color: var(--ink-faint); font-size: 11.5px; }
 .tk-raw { margin-top: 12px; }
 .tk-raw .tbl { overflow-x: auto; }
 .tk-raw table { min-width: 560px; font-size: 12.5px; }
@@ -952,6 +961,25 @@ def _verdict(st: dict) -> tuple[str, str]:
     if m <= -0.005:
         return "多數小贏、少數大輸", "mixed"
     return "跟大盤差不多", ""
+
+
+def _regime_split(g: dict, h: str) -> str:
+    """Same signal split by market backdrop (universe down vs up over the past 60 trading days),
+    each next to what ten years of backtest saw in the same backdrop."""
+    rg, bt = g.get("regime") or {}, g.get("backtest_regime") or {}
+    lines = []
+    for key, name in (("down", "大盤弱時"), ("up", "大盤不弱時")):
+        st = (rg.get(key) or {}).get(h) or {}
+        b = (bt.get(key) or {}).get(h)
+        if st.get("n", 0) >= 10:
+            m = st["mean"] * 100
+            live = (f'<span class="{"pos" if m >= 0 else "neg"}">{"強" if m >= 0 else "弱"}{abs(m):.1f}%</span>'
+                    f',{st["hit"] * 100:.0f}%跑贏<span class="n">({st["n"]}次)</span>')
+        else:
+            live = f'<span class="na">樣本太少({st.get("n", 0)}次)</span>'
+        ref = (f'<span class="ref">回測:{"強" if b >= 0 else "弱"}{abs(b) * 100:.1f}%</span>' if b is not None else "")
+        lines.append(f'<div class="tk-rg"><span class="k">{name}</span><span class="v">{live}</span>{ref}</div>')
+    return f'<div class="tk-split">{"".join(lines)}</div>'
 
 
 def _track_html(tracking: dict | None, n_universe: int = 170) -> str:
@@ -997,10 +1025,11 @@ def _track_html(tracking: dict | None, n_universe: int = 170) -> str:
             level = "低" if ep < 6 or st["n"] < 30 else "中" if ep < 15 else "高"
             cls_r = "warn" if level == "低" else "ok" if level == "高" else ""
             meta.append(f'<span class="{cls_r}">可信度{level}(只算得上{ep}段互不重疊的行情;{st["n"]}次訊號)</span>')
+        split = _regime_split(g, h)
         cards.append(f'<div class="tk-card"><div class="tk-head"><span class="tk-name">{g["label"]}</span>'
                      f'<span class="tk-pill {cls}">{text}</span></div><p class="tk-say">{say}</p>'
                      f'<div class="tk-bar" title="跟大盤比 {m:+.1f}%(長條滿格=±10%)"><i style="{pos};background:{color}"></i></div>'
-                     f'<div class="tk-meta">{"".join(meta)}</div></div>')
+                     f'{split}<div class="tk-meta">{"".join(meta)}</div></div>')
 
     def cell(st: dict | None) -> str:
         if not st or not st.get("n"):
@@ -1018,7 +1047,7 @@ def _track_html(tracking: dict | None, n_universe: int = 170) -> str:
   <details class="guide">
     <summary>實戰追蹤(自 {tracking['since']} 起的真實訊號)</summary>
     <div class="guide-body">
-      <p class="tk-intro">每張卡片回答一個問題:這個訊號出現後,那檔股票有沒有比大盤({n_universe}檔平均)強?「跑贏」是指比大盤強,不一定是上漲:大盤跌10%、它只跌5%,也算跑贏。長條往右(紅)是平均跑贏、往左(綠)是跑輸,滿格代表10%。可信度看的不是訊號次數,而是有幾段互不重疊的行情:同一波大跌連續好幾天、幾十檔一起觸發,其實只算一件事。累積到15段以上才算「高」,目前追蹤才半年,大多還是「低」。</p>
+      <p class="tk-intro">每張卡片回答一個問題:這個訊號出現後,那檔股票有沒有比大盤({n_universe}檔平均)強?「跑贏」是指比大盤強,不一定是上漲:大盤跌10%、它只跌5%,也算跑贏。長條往右(紅)是平均跑贏、往左(綠)是跑輸,滿格代表10%。可信度看的不是訊號次數,而是有幾段互不重疊的行情:同一波大跌連續好幾天、幾十檔一起觸發,其實只算一件事。累積到15段以上才算「高」,目前追蹤才半年,大多還是「低」。灰色小框把同一個訊號拆成兩種盤勢:「大盤弱」是指{n_universe}檔平均過去三個月(60個交易日)下跌,右邊是10年回測在同樣盤勢下的平均,用來判斷結果是訊號本身的效果,還是只因為碰上大跌後的反彈。</p>
       <div class="tk-grid">{''.join(cards)}</div>
       <details class="tk-raw"><summary>看完整數字</summary><div class="tbl"><table>
         <thead><tr><th>訊號</th><th>出現次數</th><th>5日後</th><th>20日後</th><th>60日後</th><th>回測60日</th></tr></thead>
