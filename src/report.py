@@ -1,4 +1,5 @@
 import csv
+import html
 import re
 import json
 from collections import Counter
@@ -1213,13 +1214,20 @@ def build_artifact_html(run_date: str, alerts: list[dict], universe: list[dict],
                          breadth: dict | None = None) -> str:
     """Standalone page matching the published Claude Artifact's design (red=偏多/rise, green=偏空/fall per TWSE convention). The scheduled task reads this file's content and republishes it to the same artifact URL each trading day."""
     m = market or MARKET_TW
+    # Stocks with no price for the day (delisted, taken private, data gap) are not evaluated; count what was.
+    n_eval = len(snapshots) if snapshots else len(universe)
+    seen = {s["stock_id"] for s in snapshots or []}
+    missing = [s for s in universe if s["stock_id"] not in seen] if snapshots else []
+    missing_html = ('<p class="label" style="margin:6px 0 0" title="名單內但當天沒有報價,未納入計算">缺 '
+                    + "、".join(html.escape(s["name"]) for s in missing[:4]) + ("…" if len(missing) > 4 else "") + "</p>"
+                    ) if missing else ""
     us = m["key"] == "us"
-    guide_html = _us_guide(Path(__file__).resolve().parent.parent / "backtest" / "results_us" / "results.json", len(universe)) if us else GUIDE_HTML
+    guide_html = _us_guide(Path(__file__).resolve().parent.parent / "backtest" / "results_us" / "results.json", n_eval) if us else GUIDE_HTML
     wx_html = WEEKLY_CROSS_HTML.replace(WX_TW_NOTE, "") if us else WEEKLY_CROSS_HTML
     lists_js = LISTS_JS.replace("tw-signal-lists", f"{m['key']}-signal-lists")
     rsi_note = {k: v.split(";")[0] for k, v in RSI_NOTE.items()} if us else RSI_NOTE
     thermo_note = "美股版的超賣比例門檻沿用台股的分級,尚未用美股資料驗證" if us else None
-    narrative = build_market_narrative(alerts, universe, len(universe))
+    narrative = build_market_narrative(alerts, universe, n_eval)
     payload = _build_unified_payload(alerts, universe, news_map, snapshots)
     triggered_count = len({a["stock_id"] for a in alerts if a["signal"] not in NOISY_CODES})
     hist_json = json.dumps(history or {"codes": [], "days": []}, ensure_ascii=False, separators=(",", ":"))
@@ -1330,15 +1338,15 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
     <span class="date">{run_date}(週{weekday})</span>
   </div>
   <p class="subhead">{m["subhead"]}</p>
-  {_summary_html(alerts, universe, len(universe))}
+  {_summary_html(alerts, universe, n_eval)}
 {_breadth_html(breadth, alerts, m)}
   <div class="stats">
-    <div class="stat"><p class="label">監測檔數</p><p class="value">{len(universe)}</p></div>
+    <div class="stat"><p class="label">監測檔數</p><p class="value">{n_eval}</p>{missing_html}</div>
     <div class="stat"><p class="label">觸發訊號</p><p class="value">{triggered_count}</p></div>
     <div class="stat"><p class="label">強勢趨勢</p><p class="value rise">{len({a["stock_id"] for a in alerts if a["signal"] in STRONG_SET})}</p></div>
     <div class="stat"><p class="label">弱勢趨勢</p><p class="value fall">{len({a["stock_id"] for a in alerts if a["signal"] in WEAK_SET})}</p></div>
   </div>
-{_thermo_html(alerts, len(universe), thermo_note)}
+{_thermo_html(alerts, n_eval, thermo_note)}
 {wx_html}
 {trend_ui.TREND_HTML}
   <div class="search">
@@ -1348,7 +1356,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
 
   <div id="filters" class="filters"></div>
   <p id="list-note" class="list-note" hidden></p>
-{guide_html}{_track_html(tracking, len(universe))}
+{guide_html}{_track_html(tracking, n_eval)}
   <div id="table-wrap" class="table-wrap">
     <table>
       <thead><tr><th>代號</th><th>名稱</th><th>產業</th><th>觸發訊號 <span class="th-hint">點任一列看個股</span></th></tr></thead>
@@ -1364,7 +1372,7 @@ footer {{ margin-top: 28px; font-size: 12px; color: var(--ink-faint); border-top
     <span><i class="dot" style="background:var(--warn)"></i>月線乖離≥15%/25%/35%(紅=漲離、綠=跌離;顏色越深級數越高)</span>
     <span><i class="dot" style="background:var(--line-strong)"></i>參考:均線/MACD/週線交叉、站上/跌破5日線與月線({"" if us else "回測預測力接近0;"}5日線不計入觸發檔數)</span>
   </div>
-  <footer>資料來源:{m["source"]} · 指標:MA交叉/收盤穿越5日線與月線/RSI/MACD/布林通道/成交量/新高新低,日線與週線各算一套(週線用5週vs20週、60週新高低,只在週收盤判斷;卡片上週線數值為含本週的暫時值),任一觸發即列入 · 搜尋可查全部{len(universe)}檔目前數值 · 僅供個人參考,非投資建議</footer>
+  <footer>資料來源:{m["source"]} · 指標:MA交叉/收盤穿越5日線與月線/RSI/MACD/布林通道/成交量/新高新低,日線與週線各算一套(週線用5週vs20週、60週新高低,只在週收盤判斷;卡片上週線數值為含本週的暫時值),任一觸發即列入 · 搜尋可查全部{n_eval}檔目前數值 · 僅供個人參考,非投資建議</footer>
 </div>
 
 <script>
@@ -1436,7 +1444,7 @@ function render() {{
   if (!visible.length) {{
     emptyMsg.style.display = "block";
     emptyMsg.textContent = searching
-      ? `查無「${{searchQuery}}」相關股票(僅收錄{m["universe"]}共{len(universe)}檔)`
+      ? `查無「${{searchQuery}}」相關股票(僅收錄{m["universe"]}共{n_eval}檔)`
       : (activeFilter === "hold" || activeFilter === "watch") ? `${{LIST_LABEL[activeFilter]}}還是空的。`
       : "今日無觸發訊號。";
   }} else {{
