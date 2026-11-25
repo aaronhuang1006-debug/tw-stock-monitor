@@ -47,6 +47,11 @@ TREND_CSS = """
 .sc-price b { font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 500; }
 .sc-chg { font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 500; }
 .sc-box .chart { touch-action: pan-y; }
+.sc-ctrl { display: flex; gap: 6px 10px; flex-wrap: wrap; }
+.sc-ctrl .chips button.opt { border-style: dashed; }
+.sc-ctrl .chips button.opt.active { border-style: solid; }
+.chart .sc-ovl { font: 500 11px "IBM Plex Sans", "PingFang TC", sans-serif; fill: var(--ink-soft); paint-order: stroke; stroke: var(--paper); stroke-width: 3px; }
+.sc-note { font-size: 12px; color: var(--ink-faint); margin: 4px 0 0; }
 .key-row .cdl { width: 8px; height: 12px; border: 1px solid; border-radius: 1px; background: var(--paper); }
 """
 
@@ -290,6 +295,84 @@ const SC_RANGES = [[20, '1個月'], [60, '3個月'], [120, '6個月']];
 let scRange = 60;
 try { scRange = +localStorage.getItem('sc-range') || 60; } catch (e) {}
 if (!SC_RANGES.some(r => r[0] === scRange)) scRange = 60;
+// Overlay toggles: 切線 (A) and 支撐壓力 (C), off by default, remembered per browser.
+const scOpt = { tl: false, sr: false };
+try { Object.assign(scOpt, JSON.parse(localStorage.getItem('sc-opt') || '{}')); } catch (e) {}
+
+// Swing points: a bar whose high (low) is the highest (lowest) of the k bars on each side.
+// Needs k later bars to confirm, so the newest k bars can't be a swing point yet.
+function swings(vals, k, isHigh) {
+  const out = [];
+  for (let i = k; i < vals.length - k; i++) {
+    const v = vals[i];
+    if (v === null || v === undefined) continue;
+    let ok = true;
+    for (let j = i - k; j <= i + k && ok; j++) {
+      if (j === i || vals[j] === null || vals[j] === undefined) continue;
+      if (isHigh ? vals[j] > v : vals[j] < v) ok = false;
+    }
+    if (ok) out.push(i);
+  }
+  return out;
+}
+
+// A: trend lines, textbook definition: a falling resistance joins two lower swing highs (下降趨勢線),
+// a rising support joins two higher swing lows (上升趨勢線). Newest pair first.
+// A line counts only if no close after its first point broke through it (0.5% tolerance), so what is
+// drawn is a line the price still respects today.
+function trendLine(vals, closes, isHigh) {
+  const piv = swings(vals, 5, isHigh);
+  const last = closes.length - 1;
+  for (let b = piv.length - 1; b >= 1; b--) {
+    for (let a = b - 1; a >= 0; a--) {
+      const i1 = piv[a], i2 = piv[b];
+      if (i2 - i1 < 8) continue;
+      if (isHigh ? vals[i2] >= vals[i1] : vals[i2] <= vals[i1]) continue;
+      const slope = (vals[i2] - vals[i1]) / (i2 - i1);
+      const at = i => vals[i1] + slope * (i - i1);
+      let ok = at(last) > 0, touches = 0;
+      for (let i = i1; i <= last && ok; i++) {
+        const cl = closes[i];
+        if (cl === null || cl === undefined) continue;
+        if (isHigh ? cl > at(i) * 1.005 : cl < at(i) * 0.995) ok = false;
+        if (vals[i] !== null && vals[i] !== undefined && Math.abs(vals[i] / at(i) - 1) < 0.01) touches++;
+      }
+      if (ok) return { i1, i2, slope, at, touches };
+    }
+  }
+  return null;
+}
+
+// C: horizontal levels. Swing highs and lows within ~1.5% of each other form one level; a level
+// needs at least two touches. Shown: the nearest one under the last close and the nearest above.
+function srLevels(h, l, c) {
+  const pts = [...swings(h, 3, true).map(i => h[i]), ...swings(l, 3, false).map(i => l[i])].sort((a, b) => a - b);
+  const groups = [];
+  pts.forEach(p => {
+    const g = groups[groups.length - 1];
+    if (g && p <= g.lo * 1.015) { g.pts.push(p); g.hi = p; } else groups.push({ lo: p, hi: p, pts: [p] });
+  });
+  let li = c.length - 1;
+  while (li >= 0 && (c[li] === null || c[li] === undefined)) li--;
+  if (li < 0) return {};
+  const px = c[li];
+  const lv = groups.filter(g => g.pts.length >= 2)
+    .map(g => ({ level: g.pts.reduce((x, y) => x + y, 0) / g.pts.length, lo: g.lo, hi: g.hi, n: g.pts.length }));
+  const below = lv.filter(g => g.level < px).sort((a, b) => b.level - a.level)[0] || null;
+  const above = lv.filter(g => g.level > px).sort((a, b) => a.level - b.level)[0] || null;
+  return { support: below, resist: above };
+}
+
+const SC_OVERLAY = {};
+function overlays(sid, ser) {
+  if (!SC_OVERLAY[sid]) {
+    const h = ser.h.map((x, i) => x ?? ser.c[i]), l = ser.l.map((x, i) => x ?? ser.c[i]);
+    SC_OVERLAY[sid] = {
+      res: trendLine(h, ser.c, true), sup: trendLine(l, ser.c, false), lv: srLevels(h, l, ser.c),
+    };
+  }
+  return SC_OVERLAY[sid];
+}
 
 const nfmt = v => v === null || v === undefined ? '—' : (Math.abs(v) >= 1000 ? Math.round(v).toLocaleString('en-US') : String(+(+v).toFixed(2)));
 const vfmt = v => {
@@ -310,14 +393,21 @@ function candleChart(stock, ser, byDate) {
   const n = dates.length;
   const W = chartWidth();
   const narrow = W < 420;
-  const padL = 8, padR = 52, padT = 14;
+  const padL = 8, padR = (scOpt.tl || scOpt.sr) ? 62 : 52, padT = 14;
   const priceH = narrow ? 210 : 250, gap = 10, volH = narrow ? 46 : 56, padB = 22;
   const H = padT + priceH + gap + volH + padB;
   const plotW = W - padL - padR;
   const slot = plotW / n;
   const X = i => padL + (i + 0.5) * slot;
   const hi = h.map((x, i) => x ?? c[i]), lo = l.map((x, i) => x ?? c[i]);
-  const pv = [...hi, ...lo, ...m, ...q].filter(x => x !== null && x !== undefined);
+  const ov = overlays(stock.stock_id, ser);
+  const tags = [];  // value tags in the right gutter, spread apart after everything is placed
+  const tlines = scOpt.tl ? [['res', ov.res], ['sup', ov.sup]].filter(t => t[1]) : [];
+  const levels = scOpt.sr ? [['resist', ov.lv.resist], ['support', ov.lv.support]].filter(t => t[1]) : [];
+  const extra = [];
+  tlines.forEach(([, t]) => { extra.push(t.at(Math.max(from, t.i1)), t.at(total - 1)); });
+  levels.forEach(([, g]) => extra.push(g.lo, g.hi));
+  const pv = [...hi, ...lo, ...m, ...q, ...extra].filter(x => x !== null && x !== undefined);
   if (!pv.length) return '<p class="hist-empty">資料不足,畫不出走勢。</p>';
   // Fit the price panel to the data (small margin) instead of rounding out to whole ticks,
   // so the candles use the full height; gridlines are the nice ticks that fall inside.
@@ -335,6 +425,9 @@ function candleChart(stock, ser, byDate) {
   let lastIdx = n - 1;
   while (lastIdx >= 0 && (c[lastIdx] === null || c[lastIdx] === undefined)) lastIdx--;
   const tagY = lastIdx >= 0 ? Y(c[lastIdx]) : -1e9;
+  const tagYs = [];  // filled below once overlays are known; ticks are drawn first, so precompute
+  if (scOpt.sr) [ov.lv.resist, ov.lv.support].forEach(g => g && tagYs.push(Y(g.level)));
+  if (scOpt.tl) [ov.res, ov.sup].forEach(t => t && tagYs.push(Y(t.at(total - 1))));
   const vmax = Math.max(1, ...v.filter(x => x !== null && x !== undefined));
   const vTop = padT + priceH + gap;
   const VY = val => vTop + volH - (val / vmax) * volH;
@@ -345,7 +438,7 @@ function candleChart(stock, ser, byDate) {
   ax.ticks.forEach(t => {
     const y = Y(t).toFixed(1);
     svg += `<line class="gl" x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}"/>`;
-    if (Math.abs(+y - tagY) > 13) svg += `<text class="ax" x="${W - padR + 6}" y="${+y + 4}">${nfmt(t)}</text>`;
+    if (Math.abs(+y - tagY) > 13 && !tagYs.some(ty => Math.abs(+y - ty) < 13)) svg += `<text class="ax" x="${W - padR + 6}" y="${+y + 4}">${nfmt(t)}</text>`;
   });
   svg += `<line class="gl" x1="${padL}" x2="${W - padR}" y1="${vTop + volH}" y2="${vTop + volH}"/>`;
   svg += `<text class="ax" x="${W - padR + 6}" y="${vTop + 9}">${vfmt(vmax)}</text>`;
@@ -384,6 +477,23 @@ function candleChart(stock, ser, byDate) {
     });
     if (d) svg += `<path d="${d}" fill="none" style="stroke:var(${col})" stroke-width="1.6" stroke-linejoin="round" opacity=".9"/>`;
   });
+  // support / resistance bands (C), drawn under the candles
+  levels.forEach(([kind, g]) => {
+    const y1 = Y(g.hi + g.level * 0.002), y2 = Y(g.lo - g.level * 0.002);
+    svg += `<rect x="${padL}" y="${y1.toFixed(1)}" width="${plotW}" height="${Math.max(2, y2 - y1).toFixed(1)}" style="fill:var(--ink-faint)" opacity=".16"/>`;
+    svg += `<line x1="${padL}" x2="${W - padR}" y1="${Y(g.level).toFixed(1)}" y2="${Y(g.level).toFixed(1)}" style="stroke:var(--ink-soft)" stroke-width="1" opacity=".7"/>`;
+    tags.push({ y: Y(g.level), text: (kind === 'resist' ? '壓' : '撐') + nfmt(g.level), fill: '--ink-faint', ink: '--paper' });
+  });
+  // trend lines (A): from the first swing point (or the left edge) to today
+  tlines.forEach(([kind, t]) => {
+    const s0 = Math.max(from, t.i1), s1 = total - 1;
+    const xa = X(s0 - from), xb = X(s1 - from);
+    svg += `<line x1="${xa.toFixed(1)}" x2="${xb.toFixed(1)}" y1="${Y(t.at(s0)).toFixed(1)}" y2="${Y(t.at(s1)).toFixed(1)}" style="stroke:var(--accent)" stroke-width="1.6" stroke-dasharray="7 4"/>`;
+    [t.i1, t.i2].forEach(i => {
+      if (i >= from) svg += `<circle cx="${X(i - from).toFixed(1)}" cy="${Y(t.at(i)).toFixed(1)}" r="3.5" style="fill:var(--paper);stroke:var(--accent)" stroke-width="1.5"/>`;
+    });
+    tags.push({ y: Y(t.at(s1)), text: nfmt(t.at(s1)), fill: '--paper', ink: '--accent', outline: true });
+  });
   // candles (TW convention: red up, green down)
   dates.forEach((d, i) => {
     if (c[i] === null || c[i] === undefined) return;
@@ -417,11 +527,22 @@ function candleChart(stock, ser, byDate) {
     const y = Y(c[last]);
     const up = (last > 0 ? c[last - 1] : prevC) === null ? true : c[last] >= (last > 0 ? c[last - 1] : prevC);
     svg += `<line x1="${padL}" x2="${W - padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" style="stroke:var(${up ? '--rise' : '--fall'})" stroke-dasharray="2 3" opacity=".7"/>`;
-    svg += `<rect x="${W - padR + 2}" y="${(y - 9).toFixed(1)}" width="${padR - 2}" height="18" rx="3" style="fill:var(${up ? '--rise' : '--fall'})"/>`;
-    svg += `<text x="${W - padR + 6}" y="${(y + 4).toFixed(1)}" style="fill:var(--paper);font:600 11px 'IBM Plex Mono',monospace">${nfmt(c[last])}</text>`;
+    tags.push({ y, text: nfmt(c[last]), fill: up ? '--rise' : '--fall', ink: '--paper', fixed: true });
   }
+  // lay the gutter tags out top to bottom, 19px apart, keeping the last-close tag where it is
+  tags.sort((a, b) => a.y - b.y);
+  const fixedTag = tags.find(t => t.fixed);
+  for (let k = 1; k < tags.length; k++) if (!tags[k].fixed && tags[k].y < tags[k - 1].y + 19) tags[k].y = tags[k - 1].y + 19;
+  for (let k = tags.length - 2; k >= 0; k--) if (!tags[k].fixed && tags[k].y > tags[k + 1].y - 19) tags[k].y = tags[k + 1].y - 19;
+  if (fixedTag) for (let k = 1; k < tags.length; k++) if (!tags[k].fixed && tags[k].y < tags[k - 1].y + 19) tags[k].y = tags[k - 1].y + 19;
+  tags.forEach(t => {
+    svg += `<rect x="${W - padR + 2}" y="${(t.y - 9).toFixed(1)}" width="${padR - 3}" height="18" rx="3" style="fill:var(${t.fill})${t.outline ? ';stroke:var(--accent)' : ''}" stroke-width="1.2"/>`;
+    svg += `<text x="${W - padR + 5}" y="${(t.y + 4).toFixed(1)}" style="fill:var(${t.ink});font:600 11px 'IBM Plex Mono','PingFang TC',monospace">${t.text}</text>`;
+  });
   svg += `<line class="xh" y1="${padT}" y2="${vTop + volH}" x1="0" x2="0" visibility="hidden"/></svg>`;
 
+  const tlTip = i => tlines.filter(([, t]) => from + i >= t.i1)
+    .map(([kind, t]) => `<div><i class="sw" style="background:var(--accent)"></i>${kind === 'res' ? '壓力線' : '支撐線'} <b>${nfmt(t.at(from + i))}</b></div>`).join('');
   const tip = i => {
     const d = dates[i];
     const prev = i > 0 ? c[i - 1] : prevC;
@@ -433,7 +554,7 @@ function candleChart(stock, ser, byDate) {
       <div>開 <b>${nfmt(o[i])}</b> 高 <b>${nfmt(h[i])}</b></div>
       <div>低 <b>${nfmt(l[i])}</b> 收 <b>${nfmt(c[i])}</b></div>
       <div>量 <b>${vfmt(v[i])}</b>${VOL_UNIT}</div>
-      <div><i class="sw" style="background:var(--warn)"></i>月線 <b>${nfmt(m[i])}</b> <i class="sw" style="background:var(--info);margin-left:6px"></i>季線 <b>${nfmt(q[i])}</b></div>${sig}`;
+      <div><i class="sw" style="background:var(--warn)"></i>月線 <b>${nfmt(m[i])}</b> <i class="sw" style="background:var(--info);margin-left:6px"></i>季線 <b>${nfmt(q[i])}</b></div>${tlTip(i)}${sig}`;
   };
   CHART_REG[id] = { spec: { tip }, W, padL, plotW, n, X, idx: px => Math.floor((px - padL) / slot) };
 
@@ -444,11 +565,20 @@ function candleChart(stock, ser, byDate) {
   const pct = (a, b) => a !== null && b ? (a / b - 1) * 100 : null;
   const pill = (label, val) => val === null ? '' :
     `<span class="sc-chg" style="color:var(${val >= 0 ? '--rise' : '--fall'})">${label} ${val >= 0 ? '+' : ''}${val.toFixed(1)}%</span>`;
+  const optBtn = (k, lab) => `<button type="button" class="opt${scOpt[k] ? ' active' : ''}" data-sc-opt="${k}" aria-pressed="${scOpt[k]}">${scOpt[k] ? '✓ ' : '+ '}${lab}</button>`;
+  const notes = [];
+  if (scOpt.tl && !ov.res) notes.push('目前沒有有效的下降壓力線');
+  if (scOpt.tl && !ov.sup) notes.push('目前沒有有效的上升支撐線');
+  if (scOpt.sr && !ov.lv.resist) notes.push('上方沒有碰過兩次以上的壓力價位');
+  if (scOpt.sr && !ov.lv.support) notes.push('下方沒有碰過兩次以上的支撐價位');
   const chips = SC_RANGES.filter(r => r[0] <= total || r[0] === SC_RANGES[0][0])
     .map(([k, lab]) => `<button type="button" class="${k === scRange ? 'active' : ''}" data-sc-range="${k}" aria-pressed="${k === scRange}">${lab}</button>`).join('');
   return `<div class="sc-head">
       <div class="sc-price"><b>${nfmt(lastC)}</b>${pill('當日', pct(lastC, dayPrev))}${pill('區間', pct(lastC, first))}</div>
-      <div class="chips" role="group" aria-label="期間">${chips}</div>
+      <div class="sc-ctrl">
+        <div class="chips" role="group" aria-label="期間">${chips}</div>
+        <div class="chips" role="group" aria-label="輔助線">${optBtn('tl', '切線')}${optBtn('sr', '支撐壓力')}</div>
+      </div>
     </div>
     <div class="chart" data-id="${id}">${svg}<div class="tip" hidden></div></div>
     <div class="key-row">
@@ -459,14 +589,22 @@ function candleChart(stock, ser, byDate) {
       <span style="color:var(--rise)">▲ 強勢趨勢訊號</span>
       <span style="color:var(--fall)">▼ 弱勢趨勢訊號</span>
       <span><i class="dot" style="background:var(--vol);border-radius:2px"></i>量能異常</span>
-    </div>`;
+      ${scOpt.tl ? '<span><i class="sw" style="border-color:var(--accent);border-top-style:dashed"></i>切線(○為連線的轉折點,右側框線標籤=今天的位置)</span>' : ''}
+      ${scOpt.sr ? '<span><i class="dot" style="background:var(--ink-faint);opacity:.5;border-radius:2px"></i>支撐/壓力帶(右側「撐/壓」標籤,碰過2次以上)</span>' : ''}
+    </div>
+    ${notes.length || scOpt.tl || scOpt.sr ? `<p class="sc-note">${notes.length ? esc(notes.join('；')) + '。' : ''}${scOpt.tl || scOpt.sr ? '輔助線依近6個月轉折點自動畫出,只供參考,沒有回測、不列為訊號。' : ''}</p>` : ''}`;
 }
 
 document.addEventListener('click', e => {
-  const btn = e.target.closest && e.target.closest('[data-sc-range]');
+  const btn = e.target.closest && e.target.closest('[data-sc-range],[data-sc-opt]');
   if (!btn) return;
-  scRange = +btn.dataset.scRange;
-  try { localStorage.setItem('sc-range', String(scRange)); } catch (err) {}
+  if (btn.dataset.scOpt) {
+    scOpt[btn.dataset.scOpt] = !scOpt[btn.dataset.scOpt];
+    try { localStorage.setItem('sc-opt', JSON.stringify(scOpt)); } catch (err) {}
+  } else {
+    scRange = +btn.dataset.scRange;
+    try { localStorage.setItem('sc-range', String(scRange)); } catch (err) {}
+  }
   document.querySelectorAll('.sc-box').forEach(box => {
     const stock = STOCKS.find(s => s.stock_id === box.dataset.sid);
     if (stock) box.innerHTML = candleChart(stock, SER.v[stock.stock_id], stockSignalsByDate(stock.stock_id));
