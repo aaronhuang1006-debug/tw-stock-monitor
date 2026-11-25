@@ -559,9 +559,10 @@ function cardHtml(stock) {{
   return `<div class="stock-card">
     <div class="stock-card-head"><span class="code">${{stock.stock_id}}</span><span class="name">${{stock.name}}</span><span class="industry">${{stock.industry}}</span>${{listToggles(stock.stock_id)}}</div>
     ${{badgesHtml}}
+    ${{stockChartHtml(stock)}}
     <div class="mini-grid">${{grid}}</div>
     ${{newsHtml}}
-    ${{stockChartHtml(stock)}}
+    ${{stockHistoryHtml(stock)}}
   </div>`;
 }}
 """
@@ -1380,6 +1381,7 @@ const STOCKS = {json.dumps(payload, ensure_ascii=False)};
 const CATS = {json.dumps(ARTIFACT_CATEGORIES, ensure_ascii=False)};
 const HIST = {hist_json};
 const SER = {series_json};
+const VOL_UNIT = {json.dumps('' if us else ' 張')};
 const SIGLABEL = {siglabel_json};
 const TREND_METRICS = {json.dumps(TREND_METRICS, ensure_ascii=False)};
 const BULL_CODES = {json.dumps(sorted(BULLISH_SIGNALS))};

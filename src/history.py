@@ -113,24 +113,49 @@ def replay_missing(conn, universe: list[dict], ind_cfg: dict, hist: dict, exclud
     return len(targets)
 
 
-def build_series(tails: dict[str, pd.DataFrame], ndays: int = 60) -> dict:
-    """Last `ndays` closes and 20-day MAs per stock, aligned on one shared date axis."""
+SERIES_DAYS = 120  # per-stock chart: about six months of daily bars
+SERIES_COLS = ("date", "open", "high", "low", "close", "volume", "ma20", "ma60")
+
+
+def _sig(val, digits: int = 4, whole: bool = True):
+    """Compact number for the page payload: ~4 significant digits (enough to draw and to read off a
+    price), integers without a trailing .0, None for gaps."""
+    if val is None or pd.isna(val):
+        return None
+    val = float(val)
+    if val == 0:
+        return 0
+    mag = len(str(int(abs(val)))) if abs(val) >= 1 else 0
+    places = digits - mag if abs(val) >= 1 else digits
+    out = round(val, max(0, places) if whole else places)  # whole: never round away integer digits
+    return int(out) if out == int(out) else out
+
+
+def build_series(tails: dict[str, pd.DataFrame], ndays: int = SERIES_DAYS, vol_unit: float = 1) -> dict:
+    """Daily bars per stock for the candlestick chart, aligned on one shared date axis.
+
+    Per stock: o/h/l/c (o/h/l to ~4 significant digits, c at full 2-decimal precision), v (volume / vol_unit),
+    m (20-day MA), q (60-day MA). Missing days are null.
+    """
     all_dates = sorted({d for t in tails.values() for d in t["date"]})
     dates = all_dates[-ndays:]
 
-    def num(val):
-        return round(float(val), 2) if pd.notna(val) else None
+    def price(val):
+        return None if val is None or pd.isna(val) else (lambda r: int(r) if r == int(r) else r)(round(float(val), 2))
 
     values = {}
     for sid, t in tails.items():
         by_date = t.set_index("date")
-        closes, mas = [], []
-        for d in dates:
-            if d in by_date.index:
-                closes.append(num(by_date.at[d, "close"]))
-                mas.append(num(by_date.at[d, "ma20"]))
-            else:
-                closes.append(None)
-                mas.append(None)
-        values[sid] = {"c": closes, "m": mas}
+        rows = [by_date.loc[d] if d in by_date.index else None for d in dates]
+
+        def col(name, fmt):
+            if name not in t.columns:
+                return [None] * len(dates)
+            return [None if r is None else fmt(r[name]) for r in rows]
+
+        values[sid] = {
+            "o": col("open", _sig), "h": col("high", _sig), "l": col("low", _sig), "c": col("close", price),
+            "v": col("volume", lambda x: _sig(None if x is None or pd.isna(x) else float(x) / vol_unit, 3, whole=False)),
+            "m": col("ma20", _sig), "q": col("ma60", _sig),
+        }
     return {"dates": dates, "v": values}

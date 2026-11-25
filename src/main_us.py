@@ -106,7 +106,7 @@ def main() -> None:
         df = indicators.compute_all(df, ind_cfg)
         if df.iloc[-1]["date"] != effective_date:
             continue
-        tails[sid] = df[["date", "close", "ma20"]].tail(60)
+        tails[sid] = df[list(history.SERIES_COLS)].tail(history.SERIES_DAYS)
         weekly = indicators.weekly_table(df, ind_cfg)
         snap = indicators.latest_snapshot(df)
         snap.update(indicators.weekly_snapshot(weekly, ind_cfg))

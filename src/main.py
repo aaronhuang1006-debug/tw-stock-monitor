@@ -116,7 +116,7 @@ def main() -> None:
         if df.iloc[-1]["date"] != effective_date:
             continue
 
-        tails[stock_id] = df[["date", "close", "ma20"]].tail(60)
+        tails[stock_id] = df[list(history.SERIES_COLS)].tail(history.SERIES_DAYS)
 
         weekly = indicators.weekly_table(df, ind_cfg)
 
@@ -183,7 +183,7 @@ def main() -> None:
         print(f"[tracking] {len(log['days'])} 天訊號紀錄,自 {track.get('since')}", file=sys.stderr)
     except Exception as exc:  # noqa: BLE001 - tracking must never block the daily report
         print(f"[tracking] skipped: {exc}", file=sys.stderr)
-    series = history.build_series(tails)
+    series = history.build_series(tails, vol_unit=1000)  # 股 -> 張
     breadth_data = None
     try:  # breadth never blocks the report; the benchmark costs one FinMind request
         bench = None

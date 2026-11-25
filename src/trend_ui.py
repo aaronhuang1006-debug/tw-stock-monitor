@@ -41,6 +41,13 @@ TREND_CSS = """
 .hist-row .hd { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-faint); flex: 0 0 46px; }
 .hist-row .hb { min-width: 0; }
 .hist-empty { font-size: 12.5px; color: var(--ink-faint); margin: 0; }
+.sc-box { margin: 4px 0 14px; }
+.sc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.sc-price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.sc-price b { font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 500; }
+.sc-chg { font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 500; }
+.sc-box .chart { touch-action: pan-y; }
+.key-row .cdl { width: 8px; height: 12px; border: 1px solid; border-radius: 1px; background: var(--paper); }
 """
 
 TREND_HTML = """
@@ -143,7 +150,7 @@ function hideTips(except) {
   });
 }
 
-document.addEventListener('pointermove', e => {
+function chartPointer(e) {
   const wrap = e.target.closest && e.target.closest('.chart');
   if (!wrap) { hideTips(null); return; }
   hideTips(wrap);
@@ -152,7 +159,7 @@ document.addEventListener('pointermove', e => {
   const svg = wrap.querySelector('svg');
   const rect = svg.getBoundingClientRect();
   const px = (e.clientX - rect.left) * (reg.W / rect.width);
-  let i = Math.round((px - reg.padL) / reg.plotW * (reg.n - 1));
+  let i = reg.idx ? reg.idx(px) : Math.round((px - reg.padL) / reg.plotW * (reg.n - 1));
   i = Math.max(0, Math.min(reg.n - 1, i));
   const x = reg.X(i);
   const xh = wrap.querySelector('.xh');
@@ -165,7 +172,9 @@ document.addEventListener('pointermove', e => {
   let left = x * scale + 12;
   if (left + tw > rect.width) left = x * scale - tw - 12;
   tip.style.left = Math.max(0, left) + 'px';
-});
+}
+document.addEventListener('pointermove', chartPointer);
+document.addEventListener('pointerdown', chartPointer);
 
 // ---------------- market trend ----------------
 const TREND_RANGES = [['30', '近30日', 30], ['60', '近60日', 60], ['all', '全部', 9999]];
@@ -272,29 +281,208 @@ function markerColor(codes) {
   return '--warn';
 }
 
+// Core signals marked on the candles (the backtest found these carry information; crossovers and
+// 5/20-day line crossings are left to the tooltip and the list below so the chart stays readable).
+const MARK_UP = new Set(["new_high", "w_new_high", "rsi_overbought", "w_rsi_overbought", "bb_breakout_upper", "w_bb_breakout_upper"]);
+const MARK_DN = new Set(["new_low", "w_new_low", "rsi_oversold", "w_rsi_oversold", "bb_breakout_lower", "w_bb_breakout_lower"]);
+const MARK_VOL = new Set(["volume_spike", "w_volume_spike"]);
+const SC_RANGES = [[20, '1個月'], [60, '3個月'], [120, '6個月']];
+let scRange = 60;
+try { scRange = +localStorage.getItem('sc-range') || 60; } catch (e) {}
+if (!SC_RANGES.some(r => r[0] === scRange)) scRange = 60;
+
+const nfmt = v => v === null || v === undefined ? '—' : (Math.abs(v) >= 1000 ? Math.round(v).toLocaleString('en-US') : String(+(+v).toFixed(2)));
+const vfmt = v => {
+  if (v === null || v === undefined) return '—';
+  const a = Math.abs(v);
+  return a >= 1e9 ? (v / 1e9).toFixed(1) + 'B' : a >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : a >= 1e4 ? (v / 1e3).toFixed(0) + 'K' : nfmt(v);
+};
+
+function candleChart(stock, ser, byDate) {
+  const id = 'ch' + (++chartSeq);
+  const total = SER.dates.length;
+  const from = Math.max(0, total - scRange);
+  const dates = SER.dates.slice(from);
+  const cut = k => (ser[k] || []).slice(from);
+  const o = cut('o'), h = cut('h'), l = cut('l'), c = cut('c'), v = cut('v'), m = cut('m'), q = cut('q');
+  const prevC = from > 0 ? ser.c[from - 1] : null;
+  const n = dates.length;
+  const W = chartWidth();
+  const narrow = W < 420;
+  const padL = 8, padR = 52, padT = 14;
+  const priceH = narrow ? 210 : 250, gap = 10, volH = narrow ? 46 : 56, padB = 22;
+  const H = padT + priceH + gap + volH + padB;
+  const plotW = W - padL - padR;
+  const slot = plotW / n;
+  const X = i => padL + (i + 0.5) * slot;
+  const hi = h.map((x, i) => x ?? c[i]), lo = l.map((x, i) => x ?? c[i]);
+  const pv = [...hi, ...lo, ...m, ...q].filter(x => x !== null && x !== undefined);
+  if (!pv.length) return '<p class="hist-empty">資料不足,畫不出走勢。</p>';
+  // Fit the price panel to the data (small margin) instead of rounding out to whole ticks,
+  // so the candles use the full height; gridlines are the nice ticks that fall inside.
+  let pMin = Math.min(...pv), pMax = Math.max(...pv);
+  if (pMax <= pMin) { pMax = pMin * 1.01 + 0.01; pMin = pMin * 0.99; }
+  const padV = (pMax - pMin) * 0.06;
+  const ax = { lo: pMin - padV, hi: pMax + padV };
+  {
+    const raw = (ax.hi - ax.lo) / 5, pw = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / pw;
+    const step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * pw;
+    ax.ticks = [];
+    for (let t = Math.ceil(ax.lo / step) * step; t <= ax.hi; t += step) ax.ticks.push(+t.toFixed(6));
+  }
+  const Y = val => padT + priceH - (val - ax.lo) / (ax.hi - ax.lo) * priceH;
+  let lastIdx = n - 1;
+  while (lastIdx >= 0 && (c[lastIdx] === null || c[lastIdx] === undefined)) lastIdx--;
+  const tagY = lastIdx >= 0 ? Y(c[lastIdx]) : -1e9;
+  const vmax = Math.max(1, ...v.filter(x => x !== null && x !== undefined));
+  const vTop = padT + priceH + gap;
+  const VY = val => vTop + volH - (val / vmax) * volH;
+  const bw = Math.max(1, Math.min(14, slot * 0.64));
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(stock.name)} K線、成交量與均線">`;
+  // grid + right-side price axis
+  ax.ticks.forEach(t => {
+    const y = Y(t).toFixed(1);
+    svg += `<line class="gl" x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}"/>`;
+    if (Math.abs(+y - tagY) > 13) svg += `<text class="ax" x="${W - padR + 6}" y="${+y + 4}">${nfmt(t)}</text>`;
+  });
+  svg += `<line class="gl" x1="${padL}" x2="${W - padR}" y1="${vTop + volH}" y2="${vTop + volH}"/>`;
+  svg += `<text class="ax" x="${W - padR + 6}" y="${vTop + 9}">${vfmt(vmax)}</text>`;
+  // month ticks on the x axis
+  let lastMonth = '';
+  const minGap = narrow ? 52 : 64;
+  let lastX = -1e9;
+  dates.forEach((d, i) => {
+    const mo = d.slice(0, 7);
+    if (mo !== lastMonth) {
+      lastMonth = mo;
+      if (i > 0 && X(i) - lastX >= minGap && X(i) < W - padR - 16) {
+        svg += `<line class="gl" x1="${X(i).toFixed(1)}" x2="${X(i).toFixed(1)}" y1="${padT}" y2="${vTop + volH}" stroke-dasharray="2 4"/>`;
+        svg += `<text class="ax" x="${X(i).toFixed(1)}" y="${H - 6}" text-anchor="middle">${+d.slice(5, 7)}月</text>`;
+        lastX = X(i);
+      }
+    }
+  });
+  svg += `<text class="ax" x="${padL}" y="${H - 6}">${mdLabel(dates[0])}</text>`;
+  // volume bars
+  dates.forEach((d, i) => {
+    if (v[i] === null || v[i] === undefined) return;
+    const up = c[i] !== null && o[i] !== null ? c[i] >= o[i] : true;
+    const spike = (byDate[d] || []).some(x => MARK_VOL.has(x));
+    const col = spike ? '--vol' : up ? '--rise' : '--fall';
+    const y = VY(v[i]);
+    svg += `<rect x="${(X(i) - bw / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0.5, vTop + volH - y).toFixed(1)}" style="fill:var(${col})" opacity="${spike ? 1 : 0.45}"/>`;
+  });
+  // moving averages
+  [[q, '--info'], [m, '--warn']].forEach(([vals, col]) => {
+    let d = '', pen = false;
+    vals.forEach((val, i) => {
+      if (val === null || val === undefined) { pen = false; return; }
+      d += `${pen ? 'L' : 'M'}${X(i).toFixed(1)},${Y(val).toFixed(1)}`;
+      pen = true;
+    });
+    if (d) svg += `<path d="${d}" fill="none" style="stroke:var(${col})" stroke-width="1.6" stroke-linejoin="round" opacity=".9"/>`;
+  });
+  // candles (TW convention: red up, green down)
+  dates.forEach((d, i) => {
+    if (c[i] === null || c[i] === undefined) return;
+    const op = o[i] ?? c[i], hh = hi[i], ll = lo[i];
+    const up = c[i] >= op;
+    const col = up ? '--rise' : '--fall';
+    const x = X(i).toFixed(1);
+    svg += `<line x1="${x}" x2="${x}" y1="${Y(hh).toFixed(1)}" y2="${Y(ll).toFixed(1)}" style="stroke:var(${col})" stroke-width="1"/>`;
+    const top = Y(Math.max(op, c[i])), bot = Y(Math.min(op, c[i]));
+    const hollow = up && bw >= 4;  // hollow red bodies for up days when there is room
+    svg += `<rect x="${(X(i) - bw / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1, bot - top).toFixed(1)}" style="fill:var(${hollow ? '--paper' : col});stroke:var(${col})" stroke-width="1"/>`;
+  });
+  // signal markers: ▲ under the low for strong-trend signals, ▼ over the high for weak-trend ones
+  const tri = (x, y, down, col) => {
+    const s = 5;
+    return down
+      ? `<path d="M${x - s},${y - s * 1.6}L${x + s},${y - s * 1.6}L${x},${y}Z" style="fill:var(${col})"/>`
+      : `<path d="M${x - s},${y + s * 1.6}L${x + s},${y + s * 1.6}L${x},${y}Z" style="fill:var(${col})"/>`;
+  };
+  dates.forEach((d, i) => {
+    const codes = byDate[d] || [];
+    if (c[i] === null || c[i] === undefined) return;
+    const x = X(i);
+    if (codes.some(x2 => MARK_UP.has(x2))) svg += tri(x, Y(lo[i]) + 4, false, '--rise');
+    if (codes.some(x2 => MARK_DN.has(x2))) svg += tri(x, Y(hi[i]) - 4, true, '--fall');
+  });
+  // last close tag on the axis
+  let last = n - 1;
+  while (last >= 0 && (c[last] === null || c[last] === undefined)) last--;
+  if (last >= 0) {
+    const y = Y(c[last]);
+    const up = (last > 0 ? c[last - 1] : prevC) === null ? true : c[last] >= (last > 0 ? c[last - 1] : prevC);
+    svg += `<line x1="${padL}" x2="${W - padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" style="stroke:var(${up ? '--rise' : '--fall'})" stroke-dasharray="2 3" opacity=".7"/>`;
+    svg += `<rect x="${W - padR + 2}" y="${(y - 9).toFixed(1)}" width="${padR - 2}" height="18" rx="3" style="fill:var(${up ? '--rise' : '--fall'})"/>`;
+    svg += `<text x="${W - padR + 6}" y="${(y + 4).toFixed(1)}" style="fill:var(--paper);font:600 11px 'IBM Plex Mono',monospace">${nfmt(c[last])}</text>`;
+  }
+  svg += `<line class="xh" y1="${padT}" y2="${vTop + volH}" x1="0" x2="0" visibility="hidden"/></svg>`;
+
+  const tip = i => {
+    const d = dates[i];
+    const prev = i > 0 ? c[i - 1] : prevC;
+    const chg = c[i] !== null && prev ? (c[i] / prev - 1) * 100 : null;
+    const chgHtml = chg === null ? '' : ` <b style="color:var(${chg >= 0 ? '--rise' : '--fall'})">${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%</b>`;
+    const codes = byDate[d] || [];
+    const sig = codes.length ? '<div style="margin-top:3px;white-space:normal;max-width:220px">' + codes.map(x => esc(SIGLABEL[x] || x)).join('、') + '</div>' : '';
+    return `<div><b>${d}</b>${chgHtml}</div>
+      <div>開 <b>${nfmt(o[i])}</b> 高 <b>${nfmt(h[i])}</b></div>
+      <div>低 <b>${nfmt(l[i])}</b> 收 <b>${nfmt(c[i])}</b></div>
+      <div>量 <b>${vfmt(v[i])}</b>${VOL_UNIT}</div>
+      <div><i class="sw" style="background:var(--warn)"></i>月線 <b>${nfmt(m[i])}</b> <i class="sw" style="background:var(--info);margin-left:6px"></i>季線 <b>${nfmt(q[i])}</b></div>${sig}`;
+  };
+  CHART_REG[id] = { spec: { tip }, W, padL, plotW, n, X, idx: px => Math.floor((px - padL) / slot) };
+
+  // headline: last close and change over the visible range
+  const first = c.find(x => x !== null && x !== undefined);
+  const lastC = last >= 0 ? c[last] : null;
+  const dayPrev = last > 0 ? c[last - 1] : prevC;
+  const pct = (a, b) => a !== null && b ? (a / b - 1) * 100 : null;
+  const pill = (label, val) => val === null ? '' :
+    `<span class="sc-chg" style="color:var(${val >= 0 ? '--rise' : '--fall'})">${label} ${val >= 0 ? '+' : ''}${val.toFixed(1)}%</span>`;
+  const chips = SC_RANGES.filter(r => r[0] <= total || r[0] === SC_RANGES[0][0])
+    .map(([k, lab]) => `<button type="button" class="${k === scRange ? 'active' : ''}" data-sc-range="${k}" aria-pressed="${k === scRange}">${lab}</button>`).join('');
+  return `<div class="sc-head">
+      <div class="sc-price"><b>${nfmt(lastC)}</b>${pill('當日', pct(lastC, dayPrev))}${pill('區間', pct(lastC, first))}</div>
+      <div class="chips" role="group" aria-label="期間">${chips}</div>
+    </div>
+    <div class="chart" data-id="${id}">${svg}<div class="tip" hidden></div></div>
+    <div class="key-row">
+      <span><i class="cdl" style="border-color:var(--rise)"></i>上漲</span>
+      <span><i class="cdl" style="background:var(--fall);border-color:var(--fall)"></i>下跌</span>
+      <span><i class="sw" style="border-color:var(--warn)"></i>月線(20日)</span>
+      <span><i class="sw" style="border-color:var(--info)"></i>季線(60日)</span>
+      <span style="color:var(--rise)">▲ 強勢趨勢訊號</span>
+      <span style="color:var(--fall)">▼ 弱勢趨勢訊號</span>
+      <span><i class="dot" style="background:var(--vol);border-radius:2px"></i>量能異常</span>
+    </div>`;
+}
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest && e.target.closest('[data-sc-range]');
+  if (!btn) return;
+  scRange = +btn.dataset.scRange;
+  try { localStorage.setItem('sc-range', String(scRange)); } catch (err) {}
+  document.querySelectorAll('.sc-box').forEach(box => {
+    const stock = STOCKS.find(s => s.stock_id === box.dataset.sid);
+    if (stock) box.innerHTML = candleChart(stock, SER.v[stock.stock_id], stockSignalsByDate(stock.stock_id));
+  });
+});
+
 function stockChartHtml(stock) {
   const ser = SER.v && SER.v[stock.stock_id];
   if (!ser || SER.dates.length < 2) return '';
+  if (!ser.o) {  // older payload (close + 20-day line only)
+    ser.o = ser.c; ser.h = ser.c; ser.l = ser.c; ser.v = ser.c.map(() => null); ser.q = ser.c.map(() => null);
+  }
+  return `<div class="sc-box" data-sid="${esc(stock.stock_id)}">${candleChart(stock, ser, stockSignalsByDate(stock.stock_id))}</div>`;
+}
+
+function stockHistoryHtml(stock) {
   const byDate = stockSignalsByDate(stock.stock_id);
-  const markers = [];
-  SER.dates.forEach((d, i) => {
-    if (byDate[d] && ser.c[i] !== null) markers.push({ i, y: ser.c[i], color: markerColor(byDate[d]) });
-  });
-  const spec = {
-    label: stock.name + ' 近期收盤價與訊號', xs: SER.dates.map(mdLabel), h: 170, zero: false,
-    series: [
-      { name: '收盤', color: '--accent', vals: ser.c },
-      { name: '20日均線', color: '--ink-faint', dash: '4 3', vals: ser.m },
-    ],
-    markers,
-    tip: i => {
-      const codes = byDate[SER.dates[i]] || [];
-      const sig = codes.length ? '<div style="margin-top:2px">' + codes.map(c => esc(SIGLABEL[c] || c)).join('、') + '</div>' : '';
-      return `<div><b>${SER.dates[i]}</b></div>
-        <div><i class="sw" style="background:var(--accent)"></i>收盤 <b>${ser.c[i] === null ? '—' : ser.c[i]}</b></div>
-        <div><i class="sw" style="background:var(--ink-faint)"></i>20日均線 <b>${ser.m[i] === null ? '—' : ser.m[i]}</b></div>${sig}`;
-    },
-  };
   const dates = Object.keys(byDate).sort().reverse();
   const horizon = HIST.days.length;
   const rows = dates.slice(0, 12).map(d => {
@@ -302,20 +490,9 @@ function stockChartHtml(stock) {
     return `<div class="hist-row"><span class="hd">${mdLabel(d)}</span><span class="hb">${badges}</span></div>`;
   }).join('');
   const more = dates.length > 12 ? `<p class="hist-empty" style="margin-top:6px">只列最近 12 天,其餘共 ${dates.length - 12} 天有訊號。</p>` : '';
-  const list = dates.length
-    ? rows + more
-    : `<p class="hist-empty">近 ${horizon} 個交易日沒有觸發任何訊號。</p>`;
+  const list = dates.length ? rows + more : `<p class="hist-empty">近 ${horizon} 個交易日沒有觸發任何訊號。</p>`;
   return `<div class="history">
-    <h3>近 ${SER.dates.length} 個交易日走勢</h3>
-    ${drawChart(spec)}
-    <div class="key-row">
-      <span><i class="sw" style="border-color:var(--accent)"></i>收盤</span>
-      <span><i class="sw" style="border-color:var(--ink-faint);border-top-style:dashed"></i>20日均線</span>
-      <span><i class="dot" style="background:var(--rise)"></i>偏多訊號日</span>
-      <span><i class="dot" style="background:var(--fall)"></i>偏空訊號日</span>
-      <span><i class="dot" style="background:var(--warn)"></i>多空並見或其他訊號日</span>
-    </div>
-    <h3 style="margin-top:14px">訊號紀錄(近 ${horizon} 個交易日)</h3>
+    <h3>訊號紀錄(近 ${horizon} 個交易日)</h3>
     ${list}
   </div>`;
 }
