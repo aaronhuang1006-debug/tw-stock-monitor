@@ -560,7 +560,7 @@ function cardHtml(stock) {{
     <div class="stock-card-head"><span class="code">${{stock.stock_id}}</span><span class="name">${{stock.name}}</span><span class="industry">${{stock.industry}}</span>${{listToggles(stock.stock_id)}}</div>
     ${{badgesHtml}}
     ${{stockChartHtml(stock)}}
-    <div class="mini-grid">${{grid}}</div>
+    <details class="more-stats"><summary>全部指標數值<span class="ms-peek">RSI ${{fmt(stock.rsi)}} · 量比 ${{fmt(stock.vol_ratio, 'x')}} · 週RSI ${{fmt(stock.wrsi)}}</span></summary><div class="mini-grid">${{grid}}</div></details>
     ${{newsHtml}}
     ${{stockHistoryHtml(stock)}}
   </div>`;
@@ -1312,6 +1312,12 @@ td.industry {{ color: var(--ink-soft); white-space: nowrap; font-size: 12.5px; }
 .stock-card-head .industry {{ font-size: 12px; color: var(--ink-faint); }}
 .stock-card-badges {{ margin-bottom: 12px; }}
 .mini-grid {{ display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 10px; }}
+.more-stats {{ margin: 0 0 4px; }}
+.more-stats summary {{ cursor: pointer; font-size: 13px; font-weight: 500; color: var(--accent); padding: 6px 0; width: fit-content; }}
+.more-stats summary:focus-visible {{ outline: 2px solid var(--accent); outline-offset: 2px; }}
+.more-stats .ms-peek {{ font-family: "IBM Plex Mono", monospace; font-weight: 400; color: var(--ink-soft); margin-left: 10px; font-size: 12.5px; }}
+.more-stats[open] .ms-peek {{ display: none; }}
+.more-stats .mini-grid {{ margin-top: 6px; }}
 .mini-stat {{ background: var(--bg); border-radius: 8px; padding: 9px 11px; }}
 .mini-stat .label {{ font-size: 11px; color: var(--ink-faint); margin: 0 0 3px; }}
 .mini-stat .value {{ font-family: "IBM Plex Mono", monospace; font-size: 15px; font-weight: 500; margin: 0; }}

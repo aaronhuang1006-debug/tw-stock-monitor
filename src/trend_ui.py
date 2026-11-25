@@ -352,7 +352,7 @@ function candleChart(stock, ser, byDate) {
   // month ticks on the x axis
   let lastMonth = '';
   const minGap = narrow ? 52 : 64;
-  let lastX = -1e9;
+  let lastX = padL + 12;  // keep month labels clear of the start-date label at the left edge
   dates.forEach((d, i) => {
     const mo = d.slice(0, 7);
     if (mo !== lastMonth) {
