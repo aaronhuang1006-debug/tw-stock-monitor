@@ -295,6 +295,7 @@ const nfmt = v => v === null || v === undefined ? '—' : (Math.abs(v) >= 1000 ?
 const vfmt = v => {
   if (v === null || v === undefined) return '—';
   const a = Math.abs(v);
+  if (VOL_UNIT.includes('張')) return a >= 1e8 ? (v / 1e8).toFixed(1) + '億' : a >= 1e4 ? (v / 1e4).toFixed(1) + '萬' : nfmt(v);
   return a >= 1e9 ? (v / 1e9).toFixed(1) + 'B' : a >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : a >= 1e4 ? (v / 1e3).toFixed(0) + 'K' : nfmt(v);
 };
 
