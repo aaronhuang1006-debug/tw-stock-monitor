@@ -736,9 +736,30 @@ NAV_HTML = """
 NAV_JS = """
 const NAV_STACK = [];
 function navState() { return { q: searchQuery, f: activeFilter, y: window.scrollY }; }
+// Searching hides the trend chart and weekly panel above the search box and shows the navbar, so
+// the page would jump. keepSearch() re-renders while holding the search box at the same spot on screen
+// (and keeps the page tall enough that the browser doesn't clamp the scroll position).
+function keepSearch(fn) {
+  const box = document.querySelector(".search");
+  if (!box) { fn(); return; }
+  const before = box.getBoundingClientRect().top;
+  document.body.style.minHeight = (document.documentElement.scrollHeight) + "px";
+  fn();
+  const shift = box.getBoundingClientRect().top - before;
+  if (Math.abs(shift) > 1) window.scrollBy(0, shift);
+  requestAnimationFrame(() => { document.body.style.minHeight = (window.scrollY + window.innerHeight) + "px"; });
+}
+function searchToView() {
+  const box = document.querySelector(".search"), bar = document.getElementById("navbar");
+  if (!box) { window.scrollTo(0, 0); return; }
+  const offset = bar && !bar.hidden ? bar.getBoundingClientRect().height + 8 : 8;
+  window.scrollTo(0, Math.max(0, box.getBoundingClientRect().top + window.scrollY - offset));
+}
 function navApply(st, scroll) {
   searchQuery = st.q; activeFilter = st.f;
   document.getElementById("search-input").value = st.q;
+  if (scroll === "search") { render(); searchToView(); return; }
+  if (typeof scroll === "number" || scroll === "top") document.body.style.minHeight = "";
   render();
   if (scroll === "top") window.scrollTo(0, 0);
   else if (typeof scroll === "number") window.scrollTo(0, scroll);
@@ -750,7 +771,11 @@ function navTo(next, toTop) {
   navApply({ q: next.q, f: next.f }, toTop ? "top" : undefined);
 }
 function openStock(sid) {
-  navTo({ q: sid, f: activeFilter }, true);
+  // land on the search box with the stock's card right below it, not the top of the page
+  const cur = navState();
+  if (cur.q === sid) { searchToView(); return; }
+  NAV_STACK.push(cur);
+  navApply({ q: sid, f: activeFilter }, "search");
 }
 function navBack() {
   if (!NAV_STACK.length) return;
@@ -1484,9 +1509,12 @@ function render() {{
 
 document.getElementById("search-input").addEventListener("input", (e) => {{
   if (!searchQuery.trim() && e.target.value.trim()) NAV_STACK.push(navState());
-  searchQuery = e.target.value; render();
+  searchQuery = e.target.value; keepSearch(render);
 }});
-document.getElementById("search-clear").addEventListener("click", () => {{ navTo({{ q: "", f: activeFilter }}); }});
+document.getElementById("search-clear").addEventListener("click", () => {{
+  if (!searchQuery) return;
+  NAV_STACK.push(navState()); searchQuery = ""; document.getElementById("search-input").value = ""; keepSearch(render);
+}});
 {NAV_JS}
 {lists_js}
 renderTrend();
