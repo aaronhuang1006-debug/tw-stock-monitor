@@ -46,7 +46,12 @@ TREND_CSS = """
 .sc-price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .sc-price b { font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 500; }
 .sc-chg { font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 500; }
-.sc-box .chart { touch-action: pan-y; }
+.sc-box .chart { touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+.sc-box .chart:active { cursor: grabbing; }
+.chart { -webkit-tap-highlight-color: transparent; }
+.sc-ctrl .chips button.zb { min-width: 34px; font-family: "IBM Plex Mono", monospace; }
+.sc-ctrl .chips button:disabled { opacity: .4; cursor: default; }
+.sc-hint { font-size: 11.5px; color: var(--ink-faint); margin: 2px 0 0; }
 .sc-ctrl { display: flex; gap: 6px 10px; flex-wrap: wrap; }
 .sc-ctrl .chips button.opt { border-style: dashed; }
 .sc-ctrl .chips button.opt.active { border-style: solid; }
@@ -155,31 +160,110 @@ function hideTips(except) {
   });
 }
 
-function chartPointer(e) {
-  const wrap = e.target.closest && e.target.closest('.chart');
-  if (!wrap) { hideTips(null); return; }
-  hideTips(wrap);
+// Charts show nothing on hover: tap / click a day to pin its crosshair and numbers, tap it again (or
+// anywhere off the chart) to clear. On the per-stock chart a horizontal drag pans, two fingers or
+// Ctrl/⌘ + wheel (trackpad pinch) zoom; a press only counts as a tap if it barely moved.
+let scSel = null;  // {sid, date}: the day picked on a stock chart, kept across zoom / pan redraws
+
+function showTip(wrap, i) {
   const reg = CHART_REG[wrap.dataset.id];
   if (!reg) return;
+  i = Math.max(0, Math.min(reg.n - 1, i));
+  hideTips(wrap);
   const svg = wrap.querySelector('svg');
   const rect = svg.getBoundingClientRect();
-  const px = (e.clientX - rect.left) * (reg.W / rect.width);
-  let i = reg.idx ? reg.idx(px) : Math.round((px - reg.padL) / reg.plotW * (reg.n - 1));
-  i = Math.max(0, Math.min(reg.n - 1, i));
   const x = reg.X(i);
   const xh = wrap.querySelector('.xh');
   xh.setAttribute('x1', x); xh.setAttribute('x2', x); xh.setAttribute('visibility', 'visible');
   const tip = wrap.querySelector('.tip');
   tip.innerHTML = reg.spec.tip(i);
   tip.hidden = false;
+  wrap.dataset.sel = i;
   const scale = rect.width / reg.W;
   const tw = tip.offsetWidth;
   let left = x * scale + 12;
   if (left + tw > rect.width) left = x * scale - tw - 12;
   tip.style.left = Math.max(0, left) + 'px';
 }
-document.addEventListener('pointermove', chartPointer);
-document.addEventListener('pointerdown', chartPointer);
+
+function clearTip(wrap) {
+  wrap.querySelector('.tip').hidden = true;
+  wrap.querySelector('.xh').setAttribute('visibility', 'hidden');
+  delete wrap.dataset.sel;
+}
+
+function tapChart(wrap, clientX) {
+  const reg = CHART_REG[wrap.dataset.id];
+  if (!reg) return;
+  const rect = wrap.querySelector('svg').getBoundingClientRect();
+  const px = (clientX - rect.left) * (reg.W / rect.width);
+  let i = reg.idx ? reg.idx(px) : Math.round((px - reg.padL) / reg.plotW * (reg.n - 1));
+  i = Math.max(0, Math.min(reg.n - 1, i));
+  const box = wrap.closest('.sc-box');
+  if (!wrap.querySelector('.tip').hidden && +wrap.dataset.sel === i) {
+    clearTip(wrap);
+    if (box) scSel = null;
+    return;
+  }
+  showTip(wrap, i);
+  if (box && reg.dates) scSel = { sid: box.dataset.sid, date: reg.dates[i] };
+}
+
+let press = null;  // the press in progress on a chart
+document.addEventListener('pointerdown', e => {
+  const wrap = e.target.closest && e.target.closest('.chart');
+  if (!wrap) {
+    if (!(e.target.closest && e.target.closest('.sc-ctrl'))) { hideTips(null); scSel = null; }
+    return;
+  }
+  const box = wrap.closest('.sc-box');
+  if (!press || press.wrap !== wrap) press = { wrap, box, pts: new Map(), moved: false, pinched: false };
+  press.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (press.pts.size === 1) Object.assign(press, { x0: e.clientX, y0: e.clientY, end0: scEnd });
+  if (box && press.pts.size === 2) {
+    const [p1, p2] = [...press.pts.values()];
+    press.pinch = { d0: Math.max(10, Math.abs(p1.x - p2.x)), span0: scSpan(), end0: scEnd, mid: (p1.x + p2.x) / 2 };
+    press.pinched = true;
+  }
+});
+document.addEventListener('pointermove', e => {
+  if (!press || !press.pts.has(e.pointerId)) return;
+  press.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (!press.box) return;
+  const svg = press.box.querySelector('.chart svg');
+  if (!svg) return;
+  const rect = svg.getBoundingClientRect();
+  if (press.pinch && press.pts.size >= 2) {
+    const [p1, p2] = [...press.pts.values()];
+    const d = Math.max(10, Math.abs(p1.x - p2.x));
+    zoomTo(press.pinch.span0 * press.pinch.d0 / d, (press.pinch.mid - rect.left) / rect.width, press.pinch.span0, press.pinch.end0);
+    return;
+  }
+  if (press.pinched) return;
+  const dx = e.clientX - press.x0;
+  if (!press.moved && Math.abs(dx) < 6) return;
+  press.moved = true;
+  const barPx = rect.width / scSpan();
+  setView(scSpan(), press.end0 + Math.round(dx / barPx));
+});
+function endPress(e, cancelled) {
+  if (!press || !press.pts.has(e.pointerId)) return;
+  press.pts.delete(e.pointerId);
+  if (press.pts.size) return;
+  const moved = press.moved || press.pinched || Math.abs(e.clientY - press.y0) > 8 || Math.abs(e.clientX - press.x0) > 6;
+  if (!cancelled && !moved) tapChart(press.wrap.isConnected ? press.wrap : press.box.querySelector('.chart'), e.clientX);
+  press = null;
+}
+document.addEventListener('pointerup', e => endPress(e, false));
+document.addEventListener('pointercancel', e => endPress(e, true));
+document.addEventListener('wheel', e => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  const box = e.target.closest && e.target.closest('.sc-box');
+  if (!box || !e.target.closest('.chart')) return;
+  e.preventDefault();
+  const rect = box.querySelector('.chart svg').getBoundingClientRect();
+  zoomTo(scSpan() * Math.exp(e.deltaY * 0.01), (e.clientX - rect.left) / rect.width, scSpan(), scEnd);
+}, { passive: false });
 
 // ---------------- market trend ----------------
 const TREND_RANGES = [['30', '近30日', 30], ['60', '近60日', 60], ['all', '全部', 9999]];
@@ -295,6 +379,50 @@ const SC_RANGES = [[20, '1個月'], [60, '3個月'], [120, '6個月']];
 let scRange = 60;
 try { scRange = +localStorage.getItem('sc-range') || 60; } catch (e) {}
 if (!SC_RANGES.some(r => r[0] === scRange)) scRange = 60;
+let scEnd = 0;           // bars between the right edge of the view and the latest bar (0 = today)
+const SC_MIN_SPAN = 10;  // zoom-in limit
+const scTotal = () => SER.dates.length;
+const scSpan = () => Math.max(Math.min(SC_MIN_SPAN, scTotal()), Math.min(scRange, scTotal()));
+
+function setView(span, end) {
+  const total = scTotal();
+  span = Math.round(Math.max(Math.min(SC_MIN_SPAN, total), Math.min(total, span)));
+  end = Math.round(Math.max(0, Math.min(total - span, end)));
+  if (span === scSpan() && end === scEnd) return;
+  scRange = span; scEnd = end;
+  redrawStockCharts();
+}
+
+// Zoom around a point: `frac` is where the pointer sits across the chart (0 = left, 1 = right); the
+// bar under it stays put. span0 / end0 are the view the gesture started from.
+function zoomTo(span, frac, span0, end0) {
+  const total = scTotal();
+  frac = Math.max(0, Math.min(1, frac));
+  span = Math.max(Math.min(SC_MIN_SPAN, total), Math.min(total, Math.round(span)));
+  const to0 = total - end0, from0 = to0 - span0;
+  const anchor = from0 + frac * span0;
+  const to = anchor - frac * span + span;
+  setView(span, total - to);
+}
+
+let scRedraw = 0;
+function redrawStockCharts() {
+  if (scRedraw) return;
+  scRedraw = requestAnimationFrame(() => {
+    scRedraw = 0;
+    document.querySelectorAll('.sc-box').forEach(box => {
+      const stock = STOCKS.find(s => s.stock_id === box.dataset.sid);
+      if (!stock) return;
+      box.innerHTML = candleChart(stock, SER.v[stock.stock_id], stockSignalsByDate(stock.stock_id));
+      if (scSel && scSel.sid === stock.stock_id) {
+        const wrap = box.querySelector('.chart');
+        const reg = wrap && CHART_REG[wrap.dataset.id];
+        const i = reg && reg.dates ? reg.dates.indexOf(scSel.date) : -1;
+        if (i >= 0) showTip(wrap, i);
+      }
+    });
+  });
+}
 // Overlay toggles: 切線 (A) and 支撐壓力 (C), off by default, remembered per browser.
 const scOpt = { tl: false, sr: false };
 try { Object.assign(scOpt, JSON.parse(localStorage.getItem('sc-opt') || '{}')); } catch (e) {}
@@ -385,9 +513,11 @@ const vfmt = v => {
 function candleChart(stock, ser, byDate) {
   const id = 'ch' + (++chartSeq);
   const total = SER.dates.length;
-  const from = Math.max(0, total - scRange);
-  const dates = SER.dates.slice(from);
-  const cut = k => (ser[k] || []).slice(from);
+  const span = scSpan();
+  const to = total - Math.max(0, Math.min(total - span, scEnd));  // exclusive right edge of the view
+  const from = to - span;
+  const dates = SER.dates.slice(from, to);
+  const cut = k => (ser[k] || []).slice(from, to);
   const o = cut('o'), h = cut('h'), l = cut('l'), c = cut('c'), v = cut('v'), m = cut('m'), q = cut('q');
   const prevC = from > 0 ? ser.c[from - 1] : null;
   const n = dates.length;
@@ -405,7 +535,7 @@ function candleChart(stock, ser, byDate) {
   const tlines = scOpt.tl ? [['res', ov.res], ['sup', ov.sup]].filter(t => t[1]) : [];
   const levels = scOpt.sr ? [['resist', ov.lv.resist], ['support', ov.lv.support]].filter(t => t[1]) : [];
   const extra = [];
-  tlines.forEach(([, t]) => { extra.push(t.at(Math.max(from, t.i1)), t.at(total - 1)); });
+  tlines.forEach(([, t]) => { extra.push(t.at(Math.max(from, t.i1)), t.at(to - 1)); });
   levels.forEach(([, g]) => extra.push(g.lo, g.hi));
   const pv = [...hi, ...lo, ...m, ...q, ...extra].filter(x => x !== null && x !== undefined);
   if (!pv.length) return '<p class="hist-empty">資料不足,畫不出走勢。</p>';
@@ -427,7 +557,7 @@ function candleChart(stock, ser, byDate) {
   const tagY = lastIdx >= 0 ? Y(c[lastIdx]) : -1e9;
   const tagYs = [];  // filled below once overlays are known; ticks are drawn first, so precompute
   if (scOpt.sr) [ov.lv.resist, ov.lv.support].forEach(g => g && tagYs.push(Y(g.level)));
-  if (scOpt.tl) [ov.res, ov.sup].forEach(t => t && tagYs.push(Y(t.at(total - 1))));
+  if (scOpt.tl) [ov.res, ov.sup].forEach(t => t && tagYs.push(Y(t.at(to - 1))));
   const vmax = Math.max(1, ...v.filter(x => x !== null && x !== undefined));
   const vTop = padT + priceH + gap;
   const VY = val => vTop + volH - (val / vmax) * volH;
@@ -486,7 +616,7 @@ function candleChart(stock, ser, byDate) {
   });
   // trend lines (A): from the first swing point (or the left edge) to today
   tlines.forEach(([kind, t]) => {
-    const s0 = Math.max(from, t.i1), s1 = total - 1;
+    const s0 = Math.max(from, t.i1), s1 = to - 1;
     const xa = X(s0 - from), xb = X(s1 - from);
     svg += `<line x1="${xa.toFixed(1)}" x2="${xb.toFixed(1)}" y1="${Y(t.at(s0)).toFixed(1)}" y2="${Y(t.at(s1)).toFixed(1)}" style="stroke:var(--accent)" stroke-width="1.6" stroke-dasharray="7 4"/>`;
     [t.i1, t.i2].forEach(i => {
@@ -526,8 +656,9 @@ function candleChart(stock, ser, byDate) {
   if (last >= 0) {
     const y = Y(c[last]);
     const up = (last > 0 ? c[last - 1] : prevC) === null ? true : c[last] >= (last > 0 ? c[last - 1] : prevC);
-    svg += `<line x1="${padL}" x2="${W - padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" style="stroke:var(${up ? '--rise' : '--fall'})" stroke-dasharray="2 3" opacity=".7"/>`;
-    tags.push({ y, text: nfmt(c[last]), fill: up ? '--rise' : '--fall', ink: '--paper', fixed: true });
+    // Panned into the past: the right edge is not today, so mark it quietly instead of as the price.
+    if (!scEnd) svg += `<line x1="${padL}" x2="${W - padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" style="stroke:var(${up ? '--rise' : '--fall'})" stroke-dasharray="2 3" opacity=".7"/>`;
+    tags.push({ y, text: nfmt(c[last]), fill: scEnd ? '--ink-faint' : up ? '--rise' : '--fall', ink: '--paper', fixed: true });
   }
   // lay the gutter tags out top to bottom, 19px apart, keeping the last-close tag where it is
   tags.sort((a, b) => a.y - b.y);
@@ -556,12 +687,17 @@ function candleChart(stock, ser, byDate) {
       <div>量 <b>${vfmt(v[i])}</b>${VOL_UNIT}</div>
       <div><i class="sw" style="background:var(--warn)"></i>月線 <b>${nfmt(m[i])}</b> <i class="sw" style="background:var(--info);margin-left:6px"></i>季線 <b>${nfmt(q[i])}</b></div>${tlTip(i)}${sig}`;
   };
-  CHART_REG[id] = { spec: { tip }, W, padL, plotW, n, X, idx: px => Math.floor((px - padL) / slot) };
+  CHART_REG[id] = { spec: { tip }, W, padL, plotW, n, X, dates, idx: px => Math.floor((px - padL) / slot) };
 
   // headline: last close and change over the visible range
   const first = c.find(x => x !== null && x !== undefined);
-  const lastC = last >= 0 ? c[last] : null;
-  const dayPrev = last > 0 ? c[last - 1] : prevC;
+  const visLast = last >= 0 ? c[last] : null;
+  let fl = ser.c.length - 1;
+  while (fl >= 0 && (ser.c[fl] === null || ser.c[fl] === undefined)) fl--;
+  const lastC = fl >= 0 ? ser.c[fl] : null;
+  let fp = fl - 1;
+  while (fp >= 0 && (ser.c[fp] === null || ser.c[fp] === undefined)) fp--;
+  const dayPrev = fp >= 0 ? ser.c[fp] : null;
   const pct = (a, b) => a !== null && b ? (a / b - 1) * 100 : null;
   const pill = (label, val) => val === null ? '' :
     `<span class="sc-chg" style="color:var(${val >= 0 ? '--rise' : '--fall'})">${label} ${val >= 0 ? '+' : ''}${val.toFixed(1)}%</span>`;
@@ -572,15 +708,20 @@ function candleChart(stock, ser, byDate) {
   if (scOpt.sr && !ov.lv.resist) notes.push('上方沒有碰過兩次以上的壓力價位');
   if (scOpt.sr && !ov.lv.support) notes.push('下方沒有碰過兩次以上的支撐價位');
   const chips = SC_RANGES.filter(r => r[0] <= total || r[0] === SC_RANGES[0][0])
-    .map(([k, lab]) => `<button type="button" class="${k === scRange ? 'active' : ''}" data-sc-range="${k}" aria-pressed="${k === scRange}">${lab}</button>`).join('');
+    .map(([k, lab]) => { const on = k === span && !scEnd; return `<button type="button" class="${on ? 'active' : ''}" data-sc-range="${k}" aria-pressed="${on}">${lab}</button>`; }).join('');
+  const zoomBtns = `<button type="button" class="zb" data-sc-zoom="out" aria-label="縮小(看更長期間)"${span >= total ? ' disabled' : ''}>－</button>`
+    + `<button type="button" class="zb" data-sc-zoom="in" aria-label="放大(看更少天)"${span <= SC_MIN_SPAN ? ' disabled' : ''}>＋</button>`
+    + (scEnd ? `<button type="button" data-sc-zoom="latest">回到最新 ›</button>` : '');
   return `<div class="sc-head">
-      <div class="sc-price"><b>${nfmt(lastC)}</b>${pill('當日', pct(lastC, dayPrev))}${pill('區間', pct(lastC, first))}</div>
+      <div class="sc-price"><b>${nfmt(lastC)}</b>${pill('當日', pct(lastC, dayPrev))}${pill(scEnd ? `${mdLabel(dates[0])}~${mdLabel(dates[n - 1])}` : '區間', pct(visLast, first))}</div>
       <div class="sc-ctrl">
         <div class="chips" role="group" aria-label="期間">${chips}</div>
+        <div class="chips" role="group" aria-label="縮放">${zoomBtns}</div>
         <div class="chips" role="group" aria-label="輔助線">${optBtn('tl', '切線')}${optBtn('sr', '支撐壓力')}</div>
       </div>
     </div>
     <div class="chart" data-id="${id}">${svg}<div class="tip" hidden></div></div>
+    <p class="sc-hint">點K棒看當天數值・左右拖曳平移・雙指或 Ctrl/⌘＋滾輪縮放</p>
     <div class="key-row">
       <span><i class="cdl" style="border-color:var(--rise)"></i>上漲</span>
       <span><i class="cdl" style="background:var(--fall);border-color:var(--fall)"></i>下跌</span>
@@ -596,19 +737,22 @@ function candleChart(stock, ser, byDate) {
 }
 
 document.addEventListener('click', e => {
-  const btn = e.target.closest && e.target.closest('[data-sc-range],[data-sc-opt]');
+  const btn = e.target.closest && e.target.closest('[data-sc-range],[data-sc-opt],[data-sc-zoom]');
   if (!btn) return;
+  if (btn.dataset.scZoom) {
+    const z = btn.dataset.scZoom;
+    if (z === 'latest') setView(scSpan(), 0);
+    else zoomTo(scSpan() * (z === 'in' ? 0.6 : 1 / 0.6), 1, scSpan(), scEnd);  // keep the right edge
+    return;
+  }
   if (btn.dataset.scOpt) {
     scOpt[btn.dataset.scOpt] = !scOpt[btn.dataset.scOpt];
     try { localStorage.setItem('sc-opt', JSON.stringify(scOpt)); } catch (err) {}
   } else {
-    scRange = +btn.dataset.scRange;
+    scRange = +btn.dataset.scRange; scEnd = 0;
     try { localStorage.setItem('sc-range', String(scRange)); } catch (err) {}
   }
-  document.querySelectorAll('.sc-box').forEach(box => {
-    const stock = STOCKS.find(s => s.stock_id === box.dataset.sid);
-    if (stock) box.innerHTML = candleChart(stock, SER.v[stock.stock_id], stockSignalsByDate(stock.stock_id));
-  });
+  redrawStockCharts();
 });
 
 function stockChartHtml(stock) {
